@@ -26,10 +26,3 @@ packages = ["src/chgraph"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-# macOS AF_UNIX sockaddr_un limit is ~104 bytes; pytest's default basetemp
-# (/private/var/folders/.../pytest-of-<user>/pytest-NNN/<test-id>/) is long
-# enough that a real deployment path (~/.local/share/chgraph/<slug>/daemon.sock,
-# well under the limit per chgraph-run-and-operate §1) still overflows once nested
-# under pytest's tmp_path in test_daemon.py. Force a short basetemp so unix-socket
-# tests can bind at all; does not change any test code or assertions.
-addopts = "--basetemp=/tmp/chgraph-pytest"

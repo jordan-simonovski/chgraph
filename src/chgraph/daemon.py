@@ -1,6 +1,7 @@
 """The daemon: sole owner of the chdb Session (INV-1). One project per daemon.
 Protocol: newline-delimited JSON over a unix socket. Lifecycle spec: chgraph-run-and-operate §2."""
 import asyncio
+import concurrent.futures
 import dataclasses
 import json
 import logging
@@ -24,26 +25,52 @@ log = logging.getLogger("chgraph.daemon")
 
 
 class SessionWorker:
-    """ALL chdb access goes through this single thread.
-    ponytail: global serialization; per-op scheduling only if throughput ever demands it
-    (Session thread-safety is OPEN — chgraph-architecture-contract weak points)."""
+    """ALL chdb access goes through this single thread, which is also the sole
+    owner of the chdb Session's lifetime (INV-1): it opens the Store as the first
+    thing it does and closes it as the last thing it does, so the Session is never
+    touched from any other thread (Session thread-safety is OPEN —
+    chgraph-architecture-contract weak points).
+    ponytail: global serialization; per-op scheduling only if throughput ever demands it."""
 
-    def __init__(self, store: Store):
-        self._store = store
+    def __init__(self, chdb_dir: str | Path):
+        self._chdb_dir = chdb_dir
         self._q: queue.Queue = queue.Queue()
+        # Signals the outcome of Store.open() back to whoever constructed us,
+        # so open errors ("Cannot lock file", "EmbeddedServer already initialized")
+        # still surface synchronously even though open() now runs on this thread.
+        self._open_result: Future = Future()
         self._t = threading.Thread(target=self._run, daemon=True)
         self._t.start()
 
+    def wait_ready(self) -> None:
+        """Block until the worker thread has opened the Store; re-raises the
+        open exception (if any) in the calling thread."""
+        self._open_result.result()
+
     def _run(self):
-        while True:
-            fn, fut = self._q.get()
-            if fn is None:
-                fut.set_result(None)
-                return
+        try:
+            store = Store.open(self._chdb_dir)
+        except Exception as e:                          # noqa: BLE001 — surfaced via wait_ready()
+            self._open_result.set_exception(e)
+            return
+        self._open_result.set_result(None)
+        try:
+            while True:
+                fn, fut = self._q.get()
+                if fn is None:
+                    fut.set_result(None)
+                    return
+                try:
+                    fut.set_result(fn(store))
+                except Exception as e:                  # noqa: BLE001 — daemon must not die on a bad query
+                    fut.set_exception(e)
+        finally:
+            # Always release the chdb dir lock when this thread exits, whether via
+            # the stop sentinel or an unexpected error in the loop above.
             try:
-                fut.set_result(fn(self._store))
-            except Exception as e:                     # noqa: BLE001 — daemon must not die on a bad query
-                fut.set_exception(e)
+                store.close()
+            except Exception:                           # noqa: BLE001 — best-effort on shutdown
+                log.exception("SessionWorker: failed to close store")
 
     def submit(self, fn) -> Future:
         fut: Future = Future()
@@ -53,8 +80,15 @@ class SessionWorker:
     def stop(self):
         fut: Future = Future()
         self._q.put((None, fut))
-        fut.result(timeout=30)
-        self._store.close()
+        try:
+            fut.result(timeout=30)
+        except concurrent.futures.TimeoutError:
+            # The worker didn't drain in time (e.g. stuck on a long-running query).
+            # The sentinel stays queued; the worker thread will still close the
+            # store itself once it gets there (see _run's finally). Log and move on
+            # so the caller (serve()) can still unlink the socket/pidfile.
+            log.error("SessionWorker.stop: timed out after 30s waiting for the "
+                      "worker to drain; store close is pending on the worker thread")
 
 
 class Daemon:
@@ -63,8 +97,13 @@ class Daemon:
         self.project = project_slug(self.repo_root)
         self.paths = ProjectPaths.for_repo(self.repo_root)
         self.paths.ensure()
-        self.worker = SessionWorker(Store.open(self.paths.chdb_dir))
+        self.worker = SessionWorker(self.paths.chdb_dir)
+        # Blocks until the worker thread has opened the Store; re-raises the open
+        # error (e.g. "Cannot lock file", "EmbeddedServer already initialized") here
+        # on the main thread so run_daemon's except clause still sees it (INV-1: F).
+        self.worker.wait_ready()
         self._index_thread: threading.Thread | None = None
+        self._index_lock = threading.Lock()
         self._stop = asyncio.Event()
 
     # ---- index job (runs in its own thread; only DB calls go through the worker) ----
@@ -99,15 +138,20 @@ class Daemon:
         return {"pong": True, "project": self.project, "pid": os.getpid()}
 
     def op_index(self, **_):
-        if self._index_thread and self._index_thread.is_alive():
-            return {"job_id": read_status(self.paths.status_json).get("job_id"),
-                    "state": "running"}
-        job_id = f"idx-{uuid.uuid4().hex[:8]}"
-        write_status(self.paths.status_json, state="queued", repo_root=self.repo_root,
-                     job_id=job_id, files_total=0, files_done=0, nodes_persisted=0,
-                     degraded_reasons=[], error=None)
-        self._index_thread = threading.Thread(target=self._index_job, args=(job_id,), daemon=True)
-        self._index_thread.start()
+        # Handlers run in the executor pool, so two concurrent "index" requests can
+        # both observe is_alive() == False before either starts a thread. Hold the
+        # lock across the check AND the thread creation/start so only one index job
+        # is ever in flight at a time.
+        with self._index_lock:
+            if self._index_thread and self._index_thread.is_alive():
+                return {"job_id": read_status(self.paths.status_json).get("job_id"),
+                        "state": "running"}
+            job_id = f"idx-{uuid.uuid4().hex[:8]}"
+            write_status(self.paths.status_json, state="queued", repo_root=self.repo_root,
+                         job_id=job_id, files_total=0, files_done=0, nodes_persisted=0,
+                         degraded_reasons=[], error=None)
+            self._index_thread = threading.Thread(target=self._index_job, args=(job_id,), daemon=True)
+            self._index_thread.start()
         return {"job_id": job_id, "state": "queued"}
 
     def op_status(self, **_):
@@ -166,8 +210,13 @@ class Daemon:
             line = await reader.readline()
             if not line:
                 return
-            req = json.loads(line.decode())
-            op = req.get("op", "")
+            try:
+                req = json.loads(line.decode())
+                op = req.get("op", "")
+            except (json.JSONDecodeError, UnicodeDecodeError, AttributeError):
+                writer.write(b'{"ok": false, "error": "malformed request"}\n')
+                await writer.drain()
+                return
             handler = getattr(self, f"op_{op}", None)
             if op == "shutdown":
                 writer.write(b'{"ok": true, "data": {"bye": true}}\n')
@@ -199,11 +248,19 @@ class Daemon:
                          repo_root=self.repo_root, job_id=None, files_total=0,
                          files_done=0, nodes_persisted=0, degraded_reasons=[], error=None)
         log.info("chgraph daemon up: project=%s socket=%s", self.project, self.paths.socket)
-        async with server:
-            await self._stop.wait()
-        self.worker.stop()
-        for p in (self.paths.socket, self.paths.pidfile):
-            p.unlink(missing_ok=True)
+        try:
+            async with server:
+                await self._stop.wait()
+        finally:
+            # A crash here must never leave a stale socket/pidfile behind a held
+            # chdb dir lock (chgraph-run-and-operate §2), so both the worker
+            # shutdown and the unlink below run unconditionally.
+            try:
+                self.worker.stop()
+            except Exception:                           # noqa: BLE001 — best-effort on shutdown
+                log.exception("Daemon.serve: worker.stop() raised during shutdown")
+            for p in (self.paths.socket, self.paths.pidfile):
+                p.unlink(missing_ok=True)
 
 
 def run_daemon(repo_root: str) -> None:
@@ -222,7 +279,16 @@ def run_daemon(repo_root: str) -> None:
                   f"run `chgraph daemon status`", file=sys.stderr)
             raise SystemExit(1)
         raise
-    asyncio.run(d.serve())
+    try:
+        asyncio.run(d.serve())
+    except OSError as e:
+        # start_unix_server binds inside serve(), not Daemon.__init__ — a bind
+        # failure (address-in-use, or AF_UNIX sockaddr_un's ~104-byte path limit
+        # on macOS) would otherwise surface as an opaque traceback.
+        log.exception("failed to bind daemon socket %s", paths.socket)
+        print(f"cannot bind daemon socket {paths.socket}: {e} "
+              f"(path too long? set a shorter CHGRAPH_DATA_DIR)", file=sys.stderr)
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

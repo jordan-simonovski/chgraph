@@ -25,9 +25,15 @@ class DaemonClient:
                     if not chunk:
                         break
                     buf += chunk
+            if not buf:
+                raise DaemonError(
+                    f"daemon at {self.socket_path} closed connection without a complete response")
+            resp = json.loads(buf.decode())
         except OSError as e:
             raise DaemonError(f"cannot reach daemon at {self.socket_path}: {e}") from e
-        resp = json.loads(buf.decode())
+        except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            raise DaemonError(
+                f"daemon at {self.socket_path} sent a malformed response: {e}") from e
         if not resp.get("ok"):
             raise DaemonError(resp.get("error", "unknown daemon error"))
         return resp["data"]
