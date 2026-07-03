@@ -22,7 +22,7 @@ def parse_file(rel_path: str, source: bytes) -> tuple[list[dict], list[dict]]:
     nodes: list[dict] = [{
         "label": "File", "name": rel_path.rsplit("/", 1)[-1],
         "qualified_name": rel_path, "file_path": rel_path,
-        "start_line": 1, "end_line": source.count(b"\n") + 1, "properties": "{}",
+        "start_line": 1, "end_line": tree.root_node.end_point[0] + 1, "properties": "{}",
     }]
     edges: list[dict] = []
     module_defs: dict[str, str] = {}     # local name -> qualified_name (module-level defs)
@@ -52,13 +52,15 @@ def parse_file(rel_path: str, source: bytes) -> tuple[list[dict], list[dict]]:
                 edges.append({"source": rel_path, "target": dotted, "type": "IMPORTS", "properties": "{}"})
         elif node.type == "import_from_statement":     # from os import path [as p]
             mod = text(node.child_by_field_name("module_name"))
+            join = "" if mod.endswith(".") else "."   # `from . import x` -> ".x", not "..x"
             for child in node.named_children[1:]:
                 if child.type in ("dotted_name", "aliased_import"):
                     name_node = child.child_by_field_name("name") or child
                     name = text(name_node)
                     alias = text(child.child_by_field_name("alias")) if child.type == "aliased_import" else name
-                    imported[alias] = f"{mod}.{name}"
-                    edges.append({"source": rel_path, "target": f"{mod}.{name}", "type": "IMPORTS", "properties": "{}"})
+                    dotted = f"{mod}{join}{name}"
+                    imported[alias] = dotted
+                    edges.append({"source": rel_path, "target": dotted, "type": "IMPORTS", "properties": "{}"})
 
     # Pass 1: symbols + imports (so calls can resolve forward references).
     def walk_defs(node, scope: str) -> None:
@@ -80,23 +82,83 @@ def parse_file(rel_path: str, source: bytes) -> tuple[list[dict], list[dict]]:
 
     walk_defs(tree.root_node, module)
 
-    # Pass 2: CALLS. Track the enclosing function scope while walking.
-    def walk_calls(node, scope: str) -> None:
+    # Pass 2: CALLS. Track the enclosing function scope, and the set of names
+    # locally bound within it (params, `=` targets, nested def/class names),
+    # while walking -- a locally-bound callee shadows any module-level def of
+    # the same name and must never resolve to a CALLS edge (see module docstring).
+    def param_names(fn_node) -> set[str]:
+        names: set[str] = set()
+        params = fn_node.child_by_field_name("parameters")
+        if params is None:
+            return names
+        for child in params.named_children:
+            if child.type == "identifier":
+                names.add(text(child))
+                continue
+            name_node = child.child_by_field_name("name")
+            if name_node is not None:
+                names.add(text(name_node))
+                continue
+            for gc in child.named_children:      # *args / **kwargs / typed w/o "name" field
+                if gc.type == "identifier":
+                    names.add(text(gc))
+                    break
+        return names
+
+    def assign_targets(target, names: set[str]) -> None:
+        if target.type == "identifier":
+            names.add(text(target))
+        elif target.type in ("pattern_list", "tuple_pattern", "list_pattern"):
+            for t in target.named_children:
+                assign_targets(t, names)
+
+    def body_local_names(body) -> set[str]:
+        """Names bound directly in `body`'s own scope: `=` targets and nested
+        def/class names. Does NOT descend into nested function/class bodies --
+        those are separate scopes with their own bindings."""
+        names: set[str] = set()
+
+        def scan(n) -> None:
+            for child in n.named_children:
+                if child.type == "function_definition":
+                    name_node = child.child_by_field_name("name")
+                    if name_node is not None:
+                        names.add(text(name_node))
+                elif child.type == "class_definition":
+                    name_node = child.child_by_field_name("name")
+                    if name_node is not None:
+                        names.add(text(name_node))
+                elif child.type == "assignment":
+                    left = child.child_by_field_name("left")
+                    if left is not None:
+                        assign_targets(left, names)
+                else:
+                    scan(child)
+
+        scan(body)
+        return names
+
+    def walk_calls(node, scope: str, local_names: frozenset[str] = frozenset()) -> None:
         for child in node.named_children:
-            if child.type in ("function_definition", "class_definition"):
+            if child.type == "function_definition":
+                body = child.child_by_field_name("body")
+                fn_locals = local_names | param_names(child) | body_local_names(body)
+                walk_calls(body, f"{scope}.{text(child.child_by_field_name('name'))}", fn_locals)
+            elif child.type == "class_definition":
                 walk_calls(child.child_by_field_name("body"),
-                           f"{scope}.{text(child.child_by_field_name('name'))}")
+                           f"{scope}.{text(child.child_by_field_name('name'))}", local_names)
             elif child.type == "call":
                 fn = child.child_by_field_name("function")
                 if fn.type == "identifier":
                     callee = text(fn)
-                    target = module_defs.get(callee) or imported.get(callee)
-                    if target:
-                        edges.append({"source": scope, "target": target,
-                                      "type": "CALLS", "properties": "{}"})
-                walk_calls(child, scope)
+                    if callee not in local_names:
+                        target = module_defs.get(callee) or imported.get(callee)
+                        if target:
+                            edges.append({"source": scope, "target": target,
+                                          "type": "CALLS", "properties": "{}"})
+                walk_calls(child, scope, local_names)
             else:
-                walk_calls(child, scope)
+                walk_calls(child, scope, local_names)
 
     walk_calls(tree.root_node, module)
     return nodes, edges

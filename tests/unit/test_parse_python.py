@@ -54,3 +54,30 @@ def test_calls_resolved_precision_first():
 def test_init_py_module_name():
     nodes, _ = parse_file("pkg/__init__.py", b"def f():\n    pass\n")
     assert "pkg.f" in _nodes_by_qn(nodes)
+
+
+def test_no_false_calls_edge_when_param_shadows_module_def():
+    src = b'''\
+def filter():
+    pass
+
+def process(filter):
+    return filter(1)
+'''
+    _, edges = parse_file("src/shadow.py", src)
+    calls = {(e["source"], e["target"]) for e in edges if e["type"] == "CALLS"}
+    # `filter` inside process() is the parameter, not the module-level def --
+    # precision-first: no CALLS edge should be emitted for the shadowed name.
+    assert not any(t == "src.shadow.filter" for _, t in calls)
+
+
+def test_parse_file_never_raises_on_malformed_input():
+    for bad_src in (
+        b"def f(:\n    return json.",
+        b"foo(bar(baz(",
+        b"\x00\xff\x01" * 50,
+    ):
+        nodes, edges = parse_file("src/bad.py", bad_src)
+        assert isinstance(nodes, list)
+        assert isinstance(edges, list)
+        assert any(n["label"] == "File" for n in nodes)
