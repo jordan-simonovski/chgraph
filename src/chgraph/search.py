@@ -56,8 +56,7 @@ def search_graph(store: Store, project: str, query: str | None = None,
         round({lex_expr}, 3)                                    AS lex,
         round(coalesce(r.r, 0), 3)                              AS rec,
         round(coalesce(d.deg, 0) / (SELECT m FROM maxdeg), 3)   AS cen,
-        round({W['lex']} * lex + {W['rec']} * rec + {W['cen']} * cen, 4) AS score,
-        count() OVER () AS _total
+        round({W['lex']} * lex + {W['rec']} * rec + {W['cen']} * cen, 4) AS score
     FROM chgraph.nodes AS n FINAL
     LEFT JOIN recency AS r ON n.file_path = r.path
     LEFT JOIN degree AS d ON n.qualified_name = d.qn
@@ -65,8 +64,9 @@ def search_graph(store: Store, project: str, query: str | None = None,
     ORDER BY score DESC, qualified_name
     LIMIT {int(limit)} OFFSET {int(offset)}
     """
+    count_sql = f"""
+    SELECT count() AS n FROM chgraph.nodes AS n FINAL WHERE {where}
+    """
     rows = store.rows(sql)
-    total = rows[0]["_total"] if rows else 0
-    for r in rows:
-        r.pop("_total", None)
+    total = store.rows(count_sql)[0]["n"]
     return SearchPage(items=rows, total=total, has_more=offset + len(rows) < total)
