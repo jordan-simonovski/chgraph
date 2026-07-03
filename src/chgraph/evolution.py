@@ -76,6 +76,12 @@ def recency(store: Store, project: str, half_life_days: float = DEFAULT_HALF_LIF
 
 
 def refresh_file_evolution(store: Store, project: str, version: int) -> int:
+    # ponytail: TRUNCATE-then-reload is safe because one data dir == one project
+    # (mirrors indexer.index_repository and gitingest.ingest_git). Without it, a
+    # path removed/renamed since the last refresh keeps its old-version row forever:
+    # FINAL only collapses rows sharing the same ORDER BY key, so a removed path has
+    # no same-key successor to collapse against and lingers as a ghost row.
+    store.exec("TRUNCATE TABLE chgraph.file_evolution")
     store.exec(f"""
         INSERT INTO chgraph.file_evolution
         SELECT project, path,

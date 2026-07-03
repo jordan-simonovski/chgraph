@@ -38,3 +38,29 @@ def test_file_evolution_refresh(synth_store):
     assert refresh_file_evolution(synth_store, "synth", version=1) == 6
     n = synth_store.rows("SELECT count() AS n FROM chgraph.file_evolution FINAL")[0]["n"]
     assert n == 6
+
+
+def _insert_change(store, path: str, hash_: str) -> None:
+    store.exec(f"""
+        INSERT INTO chgraph.git_file_changes
+        (project, hash, committed_at, author_email, path, old_path, additions, deletions, is_rename)
+        VALUES ('synth', '{hash_}', now(), 'alice@example.com', '{path}', '', 1, 0, 0)""")
+
+
+def test_file_evolution_refresh_drops_removed_paths(store):
+    """Regression for the ghost-row bug: refresh_file_evolution must TRUNCATE before
+    reloading, or a path present in an earlier refresh but absent from git_file_changes
+    on a later refresh lingers forever under FINAL (no same-key successor to collapse
+    against)."""
+    _insert_change(store, "old/gone.py", "a" * 40)
+    assert refresh_file_evolution(store, "synth", version=1) == 1
+    paths = {r["path"] for r in store.rows("SELECT path FROM chgraph.file_evolution FINAL")}
+    assert paths == {"old/gone.py"}
+
+    store.exec("TRUNCATE TABLE chgraph.git_file_changes")
+    _insert_change(store, "new/kept.py", "b" * 40)
+    refresh_file_evolution(store, "synth", version=2)
+
+    paths = {r["path"] for r in store.rows("SELECT path FROM chgraph.file_evolution FINAL")}
+    assert "new/kept.py" in paths
+    assert "old/gone.py" not in paths

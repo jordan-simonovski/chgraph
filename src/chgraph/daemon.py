@@ -194,14 +194,21 @@ class Daemon:
                               "state": read_status(self.paths.status_json)["state"]}]}
 
     def op_delete_project(self, **_):
-        def wipe(st):
-            for t in ("nodes", "edges", "git_commits", "git_file_changes",
-                      "file_evolution", "embeddings"):
-                st.exec(f"TRUNCATE TABLE chgraph.{t}")
-        self.worker.submit(wipe).result()
-        write_status(self.paths.status_json, state="uninitialized", repo_root=self.repo_root,
-                     job_id=None, files_total=0, files_done=0, nodes_persisted=0,
-                     degraded_reasons=[], error=None)
+        # Guard against racing an in-flight index job (consistent with op_index's use
+        # of _index_lock): a concurrent delete + index would race the status.json
+        # writers and could leave a final status that disagrees with table contents.
+        with self._index_lock:
+            if self._index_thread and self._index_thread.is_alive():
+                raise ValueError("cannot delete while an index job is running")
+
+            def wipe(st):
+                for t in ("nodes", "edges", "git_commits", "git_file_changes",
+                          "file_evolution", "embeddings"):
+                    st.exec(f"TRUNCATE TABLE chgraph.{t}")
+            self.worker.submit(wipe).result()
+            write_status(self.paths.status_json, state="uninitialized", repo_root=self.repo_root,
+                         job_id=None, files_total=0, files_done=0, nodes_persisted=0,
+                         degraded_reasons=[], error=None)
         return {"deleted": self.project}
 
     # ---- server ----
@@ -225,6 +232,18 @@ class Daemon:
                 return
             if handler is None:
                 resp = {"ok": False, "error": f"unknown op: {op}"}
+            elif op in ("ping", "status", "list_projects"):
+                # These never touch the SessionWorker (they only read a file or
+                # return a small in-memory dict), so call them directly on the
+                # event loop instead of queueing behind run_in_executor's shared
+                # ThreadPoolExecutor — otherwise a long index job's worker-bound
+                # ops (which block in Future.result() for the executor thread's
+                # whole lifetime) can starve these "stay responsive mid-index" ops.
+                try:
+                    data = handler(**req.get("params", {}))
+                    resp = {"ok": True, "data": data}
+                except Exception as e:                  # noqa: BLE001
+                    resp = {"ok": False, "error": str(e)}
             else:
                 loop = asyncio.get_running_loop()
                 try:
