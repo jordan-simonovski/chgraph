@@ -50,3 +50,40 @@ async def test_shim_lists_tier1_tools_and_indexes(mcp_data_dir, synth_repo, monk
 
             res = await session.call_tool("search_graph", {"query": "handle"})
             assert res.structuredContent["total"] >= 1
+            item = res.structuredContent["items"][0]
+
+            # Fix 1: search_graph's reference-only params (semantic_query et al.) must
+            # raise a clear "not supported in v0.1" error, never be silently ignored
+            # (this is the ONLY enforcement of that global constraint). FastMCP catches
+            # the tool's ValueError and returns it as an error CallToolResult
+            # (isError=True, content=[TextContent(text=str(exc))]) rather than raising
+            # McpError client-side — see mcp/server/lowlevel/server.py's call_tool
+            # handler: `except Exception as e: return self._make_error_result(str(e))`.
+            bad = await session.call_tool(
+                "search_graph", {"query": "x", "semantic_query": ["y"]})
+            assert bad.isError, "unsupported param must surface as an MCP tool error"
+            bad_text = "".join(
+                getattr(c, "text", "") for c in bad.content)
+            assert "not supported in v0.1" in bad_text
+            assert "semantic_query" in bad_text
+
+            # Fix 2: exercise the remaining tier-1 tools end-to-end against the live
+            # daemon, proving their kwarg names and pydantic model mapping actually
+            # work (previously only asserted present in list_tools).
+            schema = await session.call_tool("get_graph_schema", {})
+            assert "Function" in schema.structuredContent["labels"]
+
+            projects = await session.call_tool("list_projects", {})
+            assert len(projects.structuredContent["projects"]) >= 1
+
+            snippet = await session.call_tool(
+                "get_code_snippet", {"qualified_name": item["qualified_name"]})
+            assert snippet.structuredContent["text"]
+
+            traced = await session.call_tool(
+                "trace_path", {"function_name": item["qualified_name"]})
+            assert isinstance(traced.structuredContent["paths"], list)
+
+            # delete_project wipes the graph -- must run LAST.
+            deleted = await session.call_tool("delete_project", {})
+            assert deleted.structuredContent["deleted"]
