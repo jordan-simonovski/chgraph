@@ -1,0 +1,568 @@
+{
+  "run_id": "run-2026-07-04-C-35c8-r1",
+  "condition": "C",
+  "scaffold_model": "claude-sonnet-5",
+  "judge_model": "claude-opus-4-8",
+  "rubric_version": "1",
+  "golden_set_version": 1,
+  "corpus": {
+    "click": "16fc00e2f4a2717a521084f193709a6058afc693",
+    "flask": "36e4a824f340fdee7ed50937ba8e7f6bc7d17f81"
+  },
+  "summary": {
+    "n": 14,
+    "passed": 14,
+    "quality": 1.0,
+    "tokens_total": 2603311,
+    "tokens_mean": 185950.7857142857
+  },
+  "questions": [
+    {
+      "golden_id": "arch-click-001",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 140105,
+      "tokens_raw": {
+        "input_tokens": 10721,
+        "cache_creation_input_tokens": 60483,
+        "cache_read_input_tokens": 67270,
+        "output_tokens": 1631,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 60483
+        },
+        "inference_geo": "global",
+        "iterations": [
+          {
+            "input_tokens": 31,
+            "output_tokens": 811,
+            "cache_read_input_tokens": 33835,
+            "cache_creation_input_tokens": 5536,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 5536,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "num_turns": 5,
+      "is_error": false,
+      "notes": "All key points covered accurately."
+    },
+    {
+      "golden_id": "arch-flask-001",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 269260,
+      "tokens_raw": {
+        "input_tokens": 10849,
+        "cache_creation_input_tokens": 15911,
+        "cache_read_input_tokens": 239953,
+        "output_tokens": 2547,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 15911
+        },
+        "inference_geo": "global",
+        "iterations": [
+          {
+            "input_tokens": 31,
+            "output_tokens": 1107,
+            "cache_read_input_tokens": 36059,
+            "cache_creation_input_tokens": 777,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 777,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "num_turns": 8,
+      "is_error": false,
+      "notes": "Both key points covered: __call__ delegates to wsgi_app, and wsgi_app pushes context and dispatches."
+    },
+    {
+      "golden_id": "arch-flask-002",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 286373,
+      "tokens_raw": {
+        "input_tokens": 10859,
+        "cache_creation_input_tokens": 23343,
+        "cache_read_input_tokens": 249863,
+        "output_tokens": 2308,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 23343
+        },
+        "inference_geo": "global",
+        "iterations": [
+          {
+            "input_tokens": 31,
+            "output_tokens": 1071,
+            "cache_read_input_tokens": 41980,
+            "cache_creation_input_tokens": 2288,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 2288,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "num_turns": 9,
+      "is_error": false,
+      "notes": "Both key points covered: AppContext in ctx.py and app-level context during request handling."
+    },
+    {
+      "golden_id": "rel-click-001",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 199893,
+      "tokens_raw": {
+        "input_tokens": 10784,
+        "cache_creation_input_tokens": 15412,
+        "cache_read_input_tokens": 172409,
+        "output_tokens": 1288,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 15412
+        },
+        "inference_geo": "global",
+        "iterations": [
+          {
+            "input_tokens": 31,
+            "output_tokens": 340,
+            "cache_read_input_tokens": 35788,
+            "cache_creation_input_tokens": 549,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 549,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "num_turns": 7,
+      "is_error": false,
+      "notes": "Both key points covered: defined in decorators.py and wraps function into Command instance."
+    },
+    {
+      "golden_id": "rel-flask-001",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 229042,
+      "tokens_raw": {
+        "input_tokens": 10814,
+        "cache_creation_input_tokens": 14625,
+        "cache_read_input_tokens": 202242,
+        "output_tokens": 1361,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 14625
+        },
+        "inference_geo": "global",
+        "iterations": [
+          {
+            "input_tokens": 37,
+            "output_tokens": 213,
+            "cache_read_input_tokens": 34491,
+            "cache_creation_input_tokens": 1059,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 1059,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "num_turns": 8,
+      "is_error": false,
+      "notes": "Both key points covered."
+    },
+    {
+      "golden_id": "rel-flask-002",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 159674,
+      "tokens_raw": {
+        "input_tokens": 11126,
+        "cache_creation_input_tokens": 13014,
+        "cache_read_input_tokens": 134336,
+        "output_tokens": 1198,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 13014
+        },
+        "inference_geo": "global",
+        "iterations": [
+          {
+            "input_tokens": 404,
+            "output_tokens": 386,
+            "cache_read_input_tokens": 32863,
+            "cache_creation_input_tokens": 1076,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 1076,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "num_turns": 5,
+      "is_error": false,
+      "notes": "Both key points covered: file location and dispatch_request invoking the view."
+    },
+    {
+      "golden_id": "df-flask-001",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 211091,
+      "tokens_raw": {
+        "input_tokens": 10792,
+        "cache_creation_input_tokens": 19806,
+        "cache_read_input_tokens": 177384,
+        "output_tokens": 3109,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 19806
+        },
+        "inference_geo": "global",
+        "iterations": [
+          {
+            "input_tokens": 31,
+            "output_tokens": 1414,
+            "cache_read_input_tokens": 40140,
+            "cache_creation_input_tokens": 591,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 591,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "num_turns": 10,
+      "is_error": false,
+      "notes": "All three key points covered: __call__\u2192wsgi_app, request context + full_dispatch_request, and dispatch_request invoking view function."
+    },
+    {
+      "golden_id": "df-flask-002",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 163954,
+      "tokens_raw": {
+        "input_tokens": 10744,
+        "cache_creation_input_tokens": 15650,
+        "cache_read_input_tokens": 136110,
+        "output_tokens": 1450,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 15650
+        },
+        "inference_geo": "global",
+        "iterations": [
+          {
+            "input_tokens": 31,
+            "output_tokens": 755,
+            "cache_read_input_tokens": 33882,
+            "cache_creation_input_tokens": 2693,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 2693,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "num_turns": 5,
+      "is_error": false,
+      "notes": "Both key points covered: AppContext carries _AppCtxGlobals as g, and LocalProxy in globals.py resolves g to current context."
+    },
+    {
+      "golden_id": "imp-click-001",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 277189,
+      "tokens_raw": {
+        "input_tokens": 10976,
+        "cache_creation_input_tokens": 18964,
+        "cache_read_input_tokens": 245386,
+        "output_tokens": 1863,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 18964
+        },
+        "inference_geo": "global",
+        "iterations": [
+          {
+            "input_tokens": 157,
+            "output_tokens": 548,
+            "cache_read_input_tokens": 38147,
+            "cache_creation_input_tokens": 1742,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 1742,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "num_turns": 10,
+      "is_error": false,
+      "notes": "All key points covered: Option and Argument subclass Parameter, both directly affected."
+    },
+    {
+      "golden_id": "imp-flask-001",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 198160,
+      "tokens_raw": {
+        "input_tokens": 10826,
+        "cache_creation_input_tokens": 14760,
+        "cache_read_input_tokens": 170276,
+        "output_tokens": 2298,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 14760
+        },
+        "inference_geo": "global",
+        "iterations": [
+          {
+            "input_tokens": 31,
+            "output_tokens": 1040,
+            "cache_read_input_tokens": 35040,
+            "cache_creation_input_tokens": 645,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 645,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "num_turns": 8,
+      "is_error": false,
+      "notes": "Both key points covered: __call__ delegates to wsgi_app for every request, and middleware wrapping pattern documented."
+    },
+    {
+      "golden_id": "sym-click-001",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 58825,
+      "tokens_raw": {
+        "input_tokens": 7981,
+        "cache_creation_input_tokens": 8465,
+        "cache_read_input_tokens": 42043,
+        "output_tokens": 336,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 8465
+        },
+        "inference_geo": "global",
+        "iterations": [
+          {
+            "input_tokens": 31,
+            "output_tokens": 34,
+            "cache_read_input_tokens": 21118,
+            "cache_creation_input_tokens": 8272,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 8272,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "num_turns": 2,
+      "is_error": false,
+      "notes": "Both points covered."
+    },
+    {
+      "golden_id": "sym-click-002",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 91503,
+      "tokens_raw": {
+        "input_tokens": 10688,
+        "cache_creation_input_tokens": 8804,
+        "cache_read_input_tokens": 71509,
+        "output_tokens": 502,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 8804
+        },
+        "inference_geo": "global",
+        "iterations": [
+          {
+            "input_tokens": 2707,
+            "output_tokens": 52,
+            "cache_read_input_tokens": 29472,
+            "cache_creation_input_tokens": 257,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 257,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "num_turns": 4,
+      "is_error": false,
+      "notes": "Both key points covered."
+    },
+    {
+      "golden_id": "sym-click-003",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 60277,
+      "tokens_raw": {
+        "input_tokens": 7981,
+        "cache_creation_input_tokens": 30899,
+        "cache_read_input_tokens": 20925,
+        "output_tokens": 472,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 30899
+        },
+        "inference_geo": "global",
+        "iterations": [
+          {
+            "input_tokens": 31,
+            "output_tokens": 109,
+            "cache_read_input_tokens": 0,
+            "cache_creation_input_tokens": 30706,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 30706,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "num_turns": 3,
+      "is_error": false,
+      "notes": "Both key points covered."
+    },
+    {
+      "golden_id": "sym-flask-001",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 257965,
+      "tokens_raw": {
+        "input_tokens": 10843,
+        "cache_creation_input_tokens": 13071,
+        "cache_read_input_tokens": 232791,
+        "output_tokens": 1260,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 13071
+        },
+        "inference_geo": "global",
+        "iterations": [
+          {
+            "input_tokens": 29,
+            "output_tokens": 100,
+            "cache_read_input_tokens": 33785,
+            "cache_creation_input_tokens": 211,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 211,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "num_turns": 8,
+      "is_error": false,
+      "notes": "Both key points covered."
+    }
+  ],
+  "failures": []
+}

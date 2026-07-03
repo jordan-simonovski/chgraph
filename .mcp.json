@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "chgraph": {
+      "command": "/Users/jordanclickhouse/dev/chgraph/.venv/bin/chgraph",
+      "args": ["mcp"]
+    }
+  }
+}

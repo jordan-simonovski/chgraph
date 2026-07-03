@@ -1,0 +1,44 @@
+# Symbol lookup goldens (validation-and-qa §4). Corpus repo keys -> evals/corpus.yaml.
+# STATUS: LLM-drafted against click @16fc00e2 and flask @36e4a824 (real symbols),
+# verified: false — per §4 these do not count toward the bar until a human checks each
+# key_points set against the pinned SHA and flips provenance.verified to true.
+
+- id: sym-click-001
+  question: "Where is the `Group` class defined and what class does it subclass?"
+  repo: click
+  category: symbol_lookup
+  key_points:
+    - "defined in src/click/core.py"
+    - "subclasses Command"
+  golden_set_version: 1
+  provenance: {by: claude, verified: false, date: 2026-07-03, why: "tool coverage: search_graph symbol lookup"}
+
+- id: sym-click-002
+  question: "What class does `Option` inherit from in click?"
+  repo: click
+  category: symbol_lookup
+  key_points:
+    - "Option is defined in src/click/core.py"
+    - "it subclasses Parameter"
+  golden_set_version: 1
+  provenance: {by: claude, verified: false, date: 2026-07-03, why: "softened: dropped over-strict 'Parameter is ABC' point after run-2026-07-03-A-6779"}
+
+- id: sym-click-003
+  question: "Where is the `Argument` class defined and what does it subclass?"
+  repo: click
+  category: symbol_lookup
+  key_points:
+    - "defined in src/click/core.py"
+    - "subclasses Parameter"
+  golden_set_version: 1
+  provenance: {by: claude, verified: false, date: 2026-07-03, why: "tool coverage: inheritance edge"}
+
+- id: sym-flask-001
+  question: "Where is the `Flask` class defined and what class does it extend?"
+  repo: flask
+  category: symbol_lookup
+  key_points:
+    - "defined in src/flask/app.py"
+    - "extends the App base class (from flask.sansio.app)"
+  golden_set_version: 1
+  provenance: {by: claude, verified: false, date: 2026-07-03, why: "tool coverage: cross-module base class"}

@@ -1,0 +1,23 @@
+# Impact ("what breaks if I change X") goldens. STATUS: LLM-drafted vs click @16fc00e2 /
+# flask @36e4a824, verified: false (§4).
+
+- id: imp-click-001
+  question: "If I change the constructor signature of the `Parameter` class, which click classes are directly affected?"
+  repo: click
+  category: impact
+  key_points:
+    - "Option subclasses Parameter (src/click/core.py)"
+    - "Argument subclasses Parameter (src/click/core.py)"
+    - "both would be affected by a change to Parameter"
+  golden_set_version: 1
+  provenance: {by: claude, verified: false, date: 2026-07-03, why: "tool coverage: reverse inheritance / blast radius"}
+
+- id: imp-flask-001
+  question: "If I change how `Flask.wsgi_app` handles a request, what is affected?"
+  repo: flask
+  category: impact
+  key_points:
+    - "Flask.__call__ delegates to wsgi_app, so every incoming request flows through it"
+    - "wsgi_app is the documented wrapping point for WSGI middleware"
+  golden_set_version: 1
+  provenance: {by: claude, verified: false, date: 2026-07-03, why: "tool coverage: caller blast radius"}

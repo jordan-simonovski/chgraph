@@ -1,0 +1,33 @@
+# Architecture/structure goldens. STATUS: LLM-drafted vs click @16fc00e2 / flask @36e4a824,
+# verified: false (§4).
+
+- id: arch-click-001
+  question: "Describe click's core command class hierarchy."
+  repo: click
+  category: architecture
+  key_points:
+    - "Command is the base command class (src/click/core.py)"
+    - "Group subclasses Command and dispatches to subcommands"
+    - "CommandCollection subclasses Group"
+  golden_set_version: 1
+  provenance: {by: claude, verified: false, date: 2026-07-03, why: "tool coverage: get_architecture / structure"}
+
+- id: arch-flask-001
+  question: "Describe the WSGI entry path of a Flask application."
+  repo: flask
+  category: architecture
+  key_points:
+    - "Flask.__call__ is the WSGI entry point and delegates to wsgi_app (src/flask/app.py)"
+    - "wsgi_app pushes a request/application context and dispatches the request"
+  golden_set_version: 1
+  provenance: {by: claude, verified: false, date: 2026-07-03, why: "tool coverage: entry-point structure"}
+
+- id: arch-flask-002
+  question: "What is Flask's application context and where is it implemented?"
+  repo: flask
+  category: architecture
+  key_points:
+    - "AppContext is defined in src/flask/ctx.py"
+    - "it represents the application-level context active during request handling"
+  golden_set_version: 1
+  provenance: {by: claude, verified: false, date: 2026-07-03, why: "tool coverage: module/structure lookup"}

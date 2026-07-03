@@ -1,0 +1,32 @@
+# Caller/callee + relationship goldens. STATUS: LLM-drafted vs click @16fc00e2 / flask @36e4a824,
+# verified: false (§4).
+
+- id: rel-click-001
+  question: "What does the `@click.command` decorator produce, and where is it defined?"
+  repo: click
+  category: caller_callee
+  key_points:
+    - "the command decorator is defined in src/click/decorators.py"
+    - "it wraps the decorated function into a Command instance (Command is the default cls)"
+  golden_set_version: 1
+  provenance: {by: claude, verified: false, date: 2026-07-03, why: "tool coverage: trace decorator -> constructed type"}
+
+- id: rel-flask-001
+  question: "When a Flask app is called as a WSGI application, what does `Flask.__call__` delegate to?"
+  repo: flask
+  category: caller_callee
+  key_points:
+    - "Flask.__call__ is defined in src/flask/app.py"
+    - "it delegates to wsgi_app"
+  golden_set_version: 1
+  provenance: {by: claude, verified: false, date: 2026-07-03, why: "tool coverage: trace_path callee"}
+
+- id: rel-flask-002
+  question: "What does `Flask.full_dispatch_request` call to actually route a request to a view?"
+  repo: flask
+  category: caller_callee
+  key_points:
+    - "full_dispatch_request is in src/flask/app.py"
+    - "it calls dispatch_request, which invokes the matched view function"
+  golden_set_version: 1
+  provenance: {by: claude, verified: false, date: 2026-07-03, why: "tool coverage: call edge"}

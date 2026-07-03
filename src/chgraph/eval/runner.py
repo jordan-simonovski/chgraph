@@ -1,0 +1,35 @@
+"""Orchestrate one condition over the golden set: answer, then judge, then pair.
+
+A broken agent run (is_error) is a failure recorded as such — the judge is not
+asked to grade a non-answer.
+"""
+from __future__ import annotations
+
+from typing import Callable
+
+from chgraph.eval.agent import AnswerResult, run_question
+from chgraph.eval.goldens import CorpusRepo, Golden
+from chgraph.eval.judge import Verdict, judge_answer
+
+
+def run_eval(goldens: list[Golden], condition: str,
+             checkout_for: Callable[[str], str], corpus: dict[str, CorpusRepo],
+             model: str, judge_model: str,
+             chgraph_cmd: list[str] | None = None,
+             reference_cmd: list[str] | None = None,
+             max_budget_usd: float | None = None,
+             agent_runner=None, judge_caller=None) -> list[tuple[AnswerResult, Verdict]]:
+    pairs: list[tuple[AnswerResult, Verdict]] = []
+    for g in goldens:
+        repo = corpus[g.repo]
+        res = run_question(g, condition=condition, checkout=checkout_for(g.repo),
+                           model=model, corpus_sha=repo.sha, chgraph_cmd=chgraph_cmd,
+                           reference_cmd=reference_cmd, max_budget_usd=max_budget_usd,
+                           runner=agent_runner)
+        if res.is_error:
+            verdict = Verdict(passed=False, score=0.0,
+                              covered=[False] * len(g.key_points), notes="agent error")
+        else:
+            verdict = judge_answer(g, res.answer, model=judge_model, caller=judge_caller)
+        pairs.append((res, verdict))
+    return pairs

@@ -13,6 +13,11 @@ dependencies = [
 
 [dependency-groups]
 dev = ["pytest>=9"]
+eval = [
+    "anthropic>=0.116.0",
+    "claude-agent-sdk>=0.2.110",
+    "pyyaml>=6.0.3",
+]
 
 [project.scripts]
 chgraph = "chgraph.cli:main"
