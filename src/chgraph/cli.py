@@ -81,8 +81,13 @@ def daemon_stop(repo: str) -> int:
             print("stopped")
             return 0
         time.sleep(0.1)
-    os.kill(_pid_alive(paths), signal.SIGKILL)          # safe for data (run-and-operate §3)
-    print("killed")
+    pid = _pid_alive(paths)                             # safe for data (run-and-operate §3)
+    if pid is not None:
+        try:
+            os.kill(pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+    print("killed" if pid else "stopped")
     return 0
 
 

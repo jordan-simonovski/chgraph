@@ -7,6 +7,8 @@ import time
 
 import pytest
 
+from chgraph.paths import ProjectPaths
+
 
 def run_cli(*args, env=None):
     return subprocess.run([sys.executable, "-m", "chgraph.cli", *args],
@@ -42,3 +44,22 @@ def test_daemon_lifecycle_via_cli(cli_data_dir, synth_repo):
 
     assert run_cli("daemon", "stop", str(synth_repo), env=env).returncode == 0
     assert run_cli("daemon", "status", str(synth_repo), env=env).returncode == 1
+
+
+def test_daemon_status_stale_crashed_exits_2(cli_data_dir, synth_repo, monkeypatch):
+    # Fabricate the "stale — crashed" condition daemon_status checks: pid/lock
+    # artifacts on disk but no daemon actually listening on the socket.
+    monkeypatch.setenv("CHGRAPH_DATA_DIR", cli_data_dir)
+    paths = ProjectPaths.for_repo(str(synth_repo))
+    paths.ensure()
+    paths.chdb_dir.mkdir(parents=True, exist_ok=True)
+    (paths.chdb_dir / "status").touch()
+
+    # A pid guaranteed to be dead (and reaped, not just exited-but-zombie).
+    dead = subprocess.Popen([sys.executable, "-c", "pass"])
+    dead.wait()
+    paths.pidfile.write_text(str(dead.pid))
+
+    env = {**os.environ, "CHGRAPH_DATA_DIR": cli_data_dir}
+    r = run_cli("daemon", "status", str(synth_repo), env=env)
+    assert r.returncode == 2
