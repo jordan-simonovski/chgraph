@@ -25,3 +25,8 @@ def synth_repo(tmp_path_factory):
     ).stdout
     assert "TOTAL_COMMITS=14" in out
     return repo
+
+
+@pytest.fixture
+def anyio_backend():
+    return "asyncio"
