@@ -1,0 +1,20 @@
+# Ranking-eval goldens (git-evolution campaign Phase 6). query -> expected live symbol.
+# STATUS: derived from django @318a316a; verified: each expected qn confirmed present, and
+# each staleness pair confirmed as a same-name (live db.models vs deprecated postgres) collision.
+# Small first slice (n=4 staleness) — grow before quoting a headline number.
+#
+# staleness: pool contains a stale near-duplicate of `expected`; recency alone can't separate
+#            them (deprecate+replace landed in one commit). Tests the flagship thesis.
+# general:   no stale twin; canonical symbol ranks #1 under blind. Regression guard against
+#            over-demotion / deprecation false-positives.
+
+- {query: StringAgg, expected: django.db.models.aggregates.StringAgg, repo: django, slice: staleness}
+- {query: BitAnd,    expected: django.db.models.aggregates.BitAnd,    repo: django, slice: staleness}
+- {query: BitOr,     expected: django.db.models.aggregates.BitOr,     repo: django, slice: staleness}
+- {query: BitXor,    expected: django.db.models.aggregates.BitXor,    repo: django, slice: staleness}
+
+- {query: HttpResponseRedirect, expected: django.http.response.HttpResponseRedirect, repo: django, slice: general}
+- {query: SuspiciousOperation,  expected: django.core.exceptions.SuspiciousOperation, repo: django, slice: general}
+- {query: FieldDoesNotExist,    expected: django.core.exceptions.FieldDoesNotExist,   repo: django, slice: general}
+- {query: JsonResponse,         expected: django.http.response.JsonResponse,          repo: django, slice: general}
+- {query: SimpleLazyObject,     expected: django.utils.functional.SimpleLazyObject,   repo: django, slice: general}
