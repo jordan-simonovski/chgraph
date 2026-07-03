@@ -6,7 +6,7 @@ import tempfile
 from dataclasses import dataclass, field
 from typing import Callable
 
-from chgraph.evolution import refresh_file_evolution
+from chgraph.evolution import _q, refresh_file_evolution
 from chgraph.gitingest import ingest_git, verify_git_counts
 from chgraph.parse_python import parse_file
 from chgraph.store import Store
@@ -48,8 +48,16 @@ def _batch_insert(store: Store, table: str, rows: list[dict]) -> None:
 def index_repository(store: Store, project: str, repo_root: str,
                      on_progress: Callable[[int, int], None] | None = None) -> IndexResult:
     version = store.rows(
-        f"SELECT coalesce(max(version), 0) + 1 AS v FROM chgraph.nodes WHERE project = '{project}'"
+        f"SELECT coalesce(max(version), 0) + 1 AS v FROM chgraph.nodes WHERE project = {_q(project)}"
     )[0]["v"]
+
+    # ponytail: TRUNCATE-then-reload is safe because one data dir == one project
+    # (mirrors gitingest.ingest_git). Without it, symbols/files deleted or renamed
+    # since the last index keep their old-version rows forever: FINAL only collapses
+    # rows sharing the same ORDER BY key, so a removed row has no same-key successor
+    # to collapse against and lingers as a ghost node/edge.
+    store.exec("TRUNCATE TABLE chgraph.nodes")
+    store.exec("TRUNCATE TABLE chgraph.edges")
 
     files = _py_files(repo_root)
     node_rows: list[dict] = []
