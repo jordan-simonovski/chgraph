@@ -19,18 +19,21 @@ class Store:
     def open(cls, chdb_dir: str | Path) -> "Store":
         sess = chs.Session(str(chdb_dir))
         store = cls(sess)
-        schema.create_all(sess)
-        rows = store.rows("SELECT value FROM chgraph.meta FINAL WHERE key = 'schema_version'")
-        if not rows:
-            store.exec(
-                f"INSERT INTO chgraph.meta VALUES ('schema_version', '{schema.SCHEMA_VERSION}', 1)"
-            )
-        elif int(rows[0]["value"]) != schema.SCHEMA_VERSION:
+        try:
+            schema.create_all(sess)
+            rows = store.rows("SELECT value FROM chgraph.meta FINAL WHERE key = 'schema_version'")
+            if not rows:
+                store.exec(
+                    f"INSERT INTO chgraph.meta VALUES ('schema_version', '{schema.SCHEMA_VERSION}', 1)"
+                )
+            elif int(rows[0]["value"]) != schema.SCHEMA_VERSION:
+                raise SchemaVersionError(
+                    f"data dir has schema_version={rows[0]['value']}, "
+                    f"this build understands {schema.SCHEMA_VERSION} (INV-6: refusing to open)"
+                )
+        except Exception:
             sess.close()
-            raise SchemaVersionError(
-                f"data dir has schema_version={rows[0]['value']}, "
-                f"this build understands {schema.SCHEMA_VERSION} (INV-6: refusing to open)"
-            )
+            raise
         return store
 
     def exec(self, sql: str) -> None:

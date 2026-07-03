@@ -24,3 +24,8 @@ def test_all_tables_exist(store):
 def test_edges_dedup_on_final(store):
     store.exec("INSERT INTO chgraph.edges VALUES ('p','a','b','CALLS','{}',1),('p','a','b','CALLS','{}',2)")
     assert store.rows("SELECT count() AS n FROM chgraph.edges FINAL")[0]["n"] == 1
+    rows = store.rows(
+        "SELECT version FROM chgraph.edges FINAL "
+        "WHERE project = 'p' AND source = 'a' AND target = 'b' AND type = 'CALLS'"
+    )
+    assert rows == [{"version": 2}]
