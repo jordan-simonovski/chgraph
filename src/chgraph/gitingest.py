@@ -34,7 +34,8 @@ class GitIngestCounts:
 
 def _git(repo_root: str, *args: str) -> str:
     return subprocess.run(
-        ["git", "-C", repo_root, *args], check=True, capture_output=True, text=True
+        ["git", "-C", repo_root, "-c", "core.quotePath=false", *args],
+        check=True, capture_output=True, text=True
     ).stdout
 
 
