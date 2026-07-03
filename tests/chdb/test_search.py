@@ -1,0 +1,66 @@
+import pytest
+
+from chgraph.indexer import index_repository
+from chgraph.search import search_graph
+
+
+@pytest.fixture
+def indexed(store, synth_repo):
+    index_repository(store, "synth", str(synth_repo))
+    return store
+
+
+def test_lexical_hit_ranks_fresh_above_stale(indexed):
+    # Fixture: src/api.py touched 1 day ago; src/core/legacy.py stale.
+    # Both files define functions; a query hitting both must rank api first.
+    page = search_graph(indexed, "synth", query="handle")
+    qns = [i["qualified_name"] for i in page.items]
+    assert any(q.startswith("src.api.") for q in qns)
+    api_pos = min(i for i, q in enumerate(qns) if q.startswith("src.api."))
+    legacy_hits = [i for i, q in enumerate(qns) if "legacy" in q]
+    assert all(api_pos < i for i in legacy_hits) or not legacy_hits
+
+    # Non-vacuous proof: two separate queries, each hitting only fresh or
+    # only stale code, both with lex=1.0 (exact name match), so any score
+    # gap must come from recency (+ centrality) rather than lexical match.
+    fresh = search_graph(indexed, "synth", query="handle").items[0]
+    stale = search_graph(indexed, "synth", query="old_thing").items[0]
+    assert fresh["file_path"] == "src/api.py"
+    assert stale["file_path"] == "src/core/legacy.py"
+    assert fresh["score"] > stale["score"]
+
+
+def test_name_pattern_regex(indexed):
+    page = search_graph(indexed, "synth", name_pattern="^handle_v[0-9]$")
+    assert page.total >= 1
+    assert all(i["label"] == "Function" for i in page.items)
+
+
+def test_label_filter_and_pagination(indexed):
+    all_fns = search_graph(indexed, "synth", label="Function", limit=1000)
+    page1 = search_graph(indexed, "synth", label="Function", limit=2, offset=0)
+    assert page1.total == all_fns.total and len(page1.items) == 2 and page1.has_more
+
+
+def test_requires_some_criterion(indexed):
+    with pytest.raises(ValueError):
+        search_graph(indexed, "synth")
+
+
+def test_over_pagination_reports_full_total(indexed):
+    # Fixture has N=21 Function nodes. Paging past the end must still
+    # report the true total (not 0), with no items and has_more False.
+    all_fns = search_graph(indexed, "synth", label="Function", limit=1000)
+    n = all_fns.total
+    page = search_graph(indexed, "synth", label="Function", limit=2, offset=n + 5)
+    assert page.total == n
+    assert page.items == []
+    assert page.has_more is False
+
+
+def test_last_page_has_more_false(indexed):
+    all_fns = search_graph(indexed, "synth", label="Function", limit=1000)
+    n = all_fns.total
+    page = search_graph(indexed, "synth", label="Function", limit=2, offset=n - 1)
+    assert page.total == n
+    assert page.has_more is False

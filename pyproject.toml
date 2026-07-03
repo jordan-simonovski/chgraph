@@ -1,0 +1,28 @@
+[project]
+name = "chgraph"
+version = "0.1.0"
+description = "chdb-backed codebase knowledge graph MCP server"
+requires-python = ">=3.12"
+dependencies = [
+    "chdb==4.2.0",          # resolves chdb-core 26.5.0; chdb.__version__ reports 26.5.0
+    "mcp>=1.28,<2",
+    "tree-sitter>=0.26,<0.27",
+    "tree-sitter-python>=0.25",
+    "pydantic>=2,<3",
+]
+
+[dependency-groups]
+dev = ["pytest>=9"]
+
+[project.scripts]
+chgraph = "chgraph.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/chgraph"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
