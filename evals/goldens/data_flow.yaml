@@ -1,0 +1,22 @@
+# Cross-file data-flow goldens. STATUS: LLM-drafted vs flask @36e4a824, verified: false (§4).
+
+- id: df-flask-001
+  question: "Trace how an incoming HTTP request reaches a view function in Flask."
+  repo: flask
+  category: data_flow
+  key_points:
+    - "the WSGI server calls Flask.__call__, which calls wsgi_app"
+    - "wsgi_app establishes the request context and calls full_dispatch_request"
+    - "full_dispatch_request calls dispatch_request, which invokes the matched view function"
+  golden_set_version: 1
+  provenance: {by: claude, verified: false, date: 2026-07-03, why: "tool coverage: multi-hop cross-file flow"}
+
+- id: df-flask-002
+  question: "How does Flask expose application-scoped globals to code running during a request?"
+  repo: flask
+  category: data_flow
+  key_points:
+    - "the AppContext (src/flask/ctx.py) carries a _AppCtxGlobals object exposed as `g`"
+    - "the proxy in src/flask/globals.py resolves `g` to the current context's globals"
+  golden_set_version: 1
+  provenance: {by: claude, verified: false, date: 2026-07-03, why: "tool coverage: context -> proxy data flow"}

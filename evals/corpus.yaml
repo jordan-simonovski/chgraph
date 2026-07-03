@@ -1,0 +1,27 @@
+# Eval corpus. Python-only until chgraph has non-Python parsers (only parse_python.py exists).
+# Repos + SHAs pinned 2026-07-03. Picks reuse the reference tools' own Python corpora so the
+# head-to-head is maximally comparable: django/django is in BOTH codebase-memory-mcp's and
+# codegraph's corpora; flask/click come from codegraph's Python tier.
+# Bumping any sha invalidates every golden on that repo until re-verified (validation-and-qa §4).
+
+repos:
+  - name: django
+    repo: django/django
+    sha: 318a316a4c86a65bede68144f9546a6056d91379   # main @ 2026-07-03
+    language: python
+    role: head-to-head        # >50K LOC + rich multi-year history → satisfies §2 criteria
+    source: "codebase-memory-mcp (its Python bench) + codegraph (Python 'Large')"
+
+  - name: flask
+    repo: pallets/flask
+    sha: 36e4a824f340fdee7ed50937ba8e7f6bc7d17f81   # main @ 2026-07-03
+    language: python
+    role: dev                 # medium repo for cheap runner iteration
+    source: "codegraph (Python 'Medium')"
+
+  - name: click
+    repo: pallets/click
+    sha: 16fc00e2f4a2717a521084f193709a6058afc693   # main @ 2026-07-03
+    language: python
+    role: dev                 # small repo, fastest iteration
+    source: "codegraph (Python 'Small')"

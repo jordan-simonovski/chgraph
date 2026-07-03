@@ -1,0 +1,62 @@
+{
+  "run_id": "run-2026-07-03-A-6779",
+  "condition": "A",
+  "scaffold_model": "claude-sonnet-5",
+  "judge_model": "claude-opus-4-8",
+  "rubric_version": "1",
+  "golden_set_version": 1,
+  "corpus": {
+    "click": "16fc00e2f4a2717a521084f193709a6058afc693"
+  },
+  "summary": {
+    "n": 4,
+    "passed": 3,
+    "quality": 0.75,
+    "tokens_total": 596465,
+    "tokens_mean": 149116.25
+  },
+  "questions": [
+    {
+      "golden_id": "arch-click-001",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 191554,
+      "num_turns": 6,
+      "is_error": false,
+      "notes": "All three key points covered accurately."
+    },
+    {
+      "golden_id": "rel-click-001",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 193214,
+      "num_turns": 7,
+      "is_error": false,
+      "notes": "Both key points covered: defined in decorators.py and wraps function into Command (default cls)."
+    },
+    {
+      "golden_id": "sym-click-001",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 57367,
+      "num_turns": 2,
+      "is_error": false,
+      "notes": "Both key points covered."
+    },
+    {
+      "golden_id": "sym-click-002",
+      "passed": false,
+      "score": 0.6667,
+      "tokens": 154330,
+      "num_turns": 5,
+      "is_error": false,
+      "notes": "Does not mention Parameter is an abstract base class (ABC)."
+    }
+  ],
+  "failures": [
+    {
+      "golden_id": "sym-click-002",
+      "reason": "judge_fail"
+    }
+  ]
+}

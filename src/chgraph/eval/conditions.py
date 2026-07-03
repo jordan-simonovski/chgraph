@@ -1,0 +1,60 @@
+"""Map an eval condition to Claude Agent SDK options (validation-and-qa §2).
+
+The three conditions differ ONLY in which tools the agent may call; everything
+else (model, prompt, cwd) is held constant so the comparison is fair. Returns
+plain kwargs so this stays SDK-import-free and unit-testable; agent.py feeds
+them to ClaudeAgentOptions(**kwargs).
+"""
+from __future__ import annotations
+
+FILE_TOOLS = ["Read", "Glob", "Grep"]
+
+# chgraph MCP query surface (read-only; index tools deliberately excluded —
+# the corpus is indexed before a run, the agent must not spend turns indexing).
+CHGRAPH_TOOLS = [
+    "mcp__chgraph__search_graph",
+    "mcp__chgraph__get_code_snippet",
+    "mcp__chgraph__trace_path",
+    "mcp__chgraph__get_graph_schema",
+]
+
+SYSTEM_PROMPT = (
+    "You are a software engineer answering a question about the codebase in the "
+    "current working directory. Investigate using only the tools available to you, "
+    "then give a concise, concrete answer that names the specific files, symbols, "
+    "and relationships involved. Do not modify any files."
+)
+
+# ponytail: max_turns/budget caps live here so a runaway agent can't burn the run.
+MAX_TURNS = 40
+
+
+def agent_options(condition: str, checkout: str, model: str,
+                  chgraph_cmd: list[str] | None = None,
+                  reference_cmd: list[str] | None = None,
+                  max_budget_usd: float | None = None) -> dict:
+    base = dict(
+        cwd=checkout, model=model, system_prompt=SYSTEM_PROMPT,
+        max_turns=MAX_TURNS, permission_mode="bypassPermissions",
+        mcp_servers={}, allowed_tools=list(FILE_TOOLS),
+    )
+    if max_budget_usd is not None:
+        base["max_budget_usd"] = max_budget_usd  # hard per-question spend ceiling
+    if condition == "A":
+        return base
+    if condition == "C":
+        if not chgraph_cmd:
+            raise ValueError("condition C requires chgraph_cmd")
+        # bind the MCP server to this checkout's graph explicitly (not the spawn cwd)
+        args = chgraph_cmd[1:] + ["--repo", checkout]
+        base["mcp_servers"] = {"chgraph": {"command": chgraph_cmd[0], "args": args}}
+        base["allowed_tools"] = FILE_TOOLS + CHGRAPH_TOOLS
+        return base
+    if condition == "B":
+        if not reference_cmd:
+            raise ValueError("condition B requires reference_cmd")
+        # ponytail: reference tool's MCP tool names wired in Step 3 when it's stood up.
+        base["mcp_servers"] = {"reference": {"command": reference_cmd[0], "args": reference_cmd[1:]}}
+        base["allowed_tools"] = FILE_TOOLS + ["mcp__reference"]
+        return base
+    raise ValueError(f"unknown condition {condition!r} (want A, B, or C)")
