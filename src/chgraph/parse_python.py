@@ -2,11 +2,79 @@
 CALLS edges are emitted ONLY when the callee resolves to a same-module def or an
 explicit `from X import name` binding — unresolvable calls are dropped, not guessed
 (the reference tool's false-CALLS bugs are the cautionary tale, code-graph-reference)."""
+import json
+import re
+
 import tree_sitter_python as tspython
 from tree_sitter import Language, Parser
 
 _PY = Language(tspython.language())
 _parser = Parser(_PY)
+
+# A symbol is DEPRECATED (whole-symbol, not "mentions deprecation") iff it
+# unconditionally issues a deprecation warning in its own body — the marker is a
+# direct body statement, not nested in if/try/…, and not a comment. This is what
+# separates a deprecated symbol from a live one that merely deprecates a parameter
+# (django's JsonResponse/QuerySet false-positive class; see chgraph-git-evolution-campaign
+# Phase-6 promotion). Detected here at parse time; a coarse body-text regex is retired.
+_DEP_TOKEN = re.compile(r"(?:Pending)?DeprecationWarning\b|RemovedIn\w*Warning\b")
+
+
+def _stmt_issues_dep_warning(stmt, text) -> bool:
+    """True if `stmt` (a DIRECT body child) unconditionally issues a deprecation
+    warning: a warnings.warn(...)/warn(...) with a deprecation category, or a raise of
+    a *Deprecation/RemovedIn*Warning. Guarded (nested) warns and comments aren't direct
+    children, so they don't count."""
+    if stmt.type == "expression_statement" and stmt.named_children:
+        call = stmt.named_children[0]
+        if call.type == "call":
+            fn = call.child_by_field_name("function")
+            if (text(fn) if fn is not None else "") in ("warnings.warn", "warn"):
+                return bool(_DEP_TOKEN.search(text(call)))
+    elif stmt.type == "raise_statement":
+        return bool(_DEP_TOKEN.search(text(stmt)))
+    return False
+
+
+def _body_unconditionally_warns(body, text) -> bool:
+    return body is not None and any(
+        _stmt_issues_dep_warning(c, text) for c in body.named_children)
+
+
+def _has_deprecated_decorator(node, text) -> bool:
+    parent = node.parent
+    if parent is not None and parent.type == "decorated_definition":
+        return any(c.type == "decorator" and re.search(r"\bdeprecated\b", text(c))
+                   for c in parent.named_children)
+    return False
+
+
+def _docstring_marks_deprecated(body, text) -> bool:
+    if body is None or not body.named_children:
+        return False
+    first = body.named_children[0]
+    return (first.type == "expression_statement" and bool(first.named_children)
+            and first.named_children[0].type == "string"
+            and ".. deprecated::" in text(first.named_children[0]))
+
+
+def _is_deprecated_def(node, text) -> bool:
+    """Whole-symbol deprecation for a function_definition/class_definition node."""
+    body = node.child_by_field_name("body")
+    if _has_deprecated_decorator(node, text) or _docstring_marks_deprecated(body, text):
+        return True
+    if node.type == "function_definition":
+        return _body_unconditionally_warns(body, text)
+    for child in (body.named_children if body is not None else ()):   # class: check __init__
+        fn = child
+        if child.type == "decorated_definition":
+            fn = next((g for g in child.named_children
+                       if g.type == "function_definition"), None)
+        if (fn is not None and fn.type == "function_definition"
+                and text(fn.child_by_field_name("name")) == "__init__"
+                and _body_unconditionally_warns(fn.child_by_field_name("body"), text)):
+            return True
+    return False
 
 
 def _module_name(rel_path: str) -> str:
@@ -35,10 +103,11 @@ def parse_file(rel_path: str, source: bytes) -> tuple[list[dict], list[dict]]:
         name_node = node.child_by_field_name("name")
         name = text(name_node)
         qn = f"{scope}.{name}"
+        props = '{"deprecated": true}' if _is_deprecated_def(node, text) else "{}"
         nodes.append({
             "label": kind, "name": name, "qualified_name": qn, "file_path": rel_path,
             "start_line": node.start_point[0] + 1, "end_line": node.end_point[0] + 1,
-            "properties": "{}",
+            "properties": props,
         })
         edges.append({"source": rel_path, "target": qn, "type": "DEFINES", "properties": "{}"})
         return qn

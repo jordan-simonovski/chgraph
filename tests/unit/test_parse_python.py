@@ -1,3 +1,5 @@
+import json
+
 from chgraph.parse_python import parse_file
 
 SRC = b'''\
@@ -81,3 +83,81 @@ def test_parse_file_never_raises_on_malformed_input():
         assert isinstance(nodes, list)
         assert isinstance(edges, list)
         assert any(n["label"] == "File" for n in nodes)
+
+
+# --- deprecation detection (Phase-6 promotion): whole-symbol deprecation only ---
+
+DEPREC_SRC = b'''\
+import warnings
+from django.utils.deprecation import RemovedInDjango70Warning
+
+
+def old_fn():
+    """Legacy helper."""
+    warnings.warn("old_fn is deprecated", category=RemovedInDjango70Warning)
+    return 1
+
+
+def emits_warn_for_arg(safe=None):
+    """Live function; only a PARAMETER is deprecated (guarded warn)."""
+    if safe is None:
+        safe = False
+    else:
+        warnings.warn("The safe parameter is deprecated", DeprecationWarning)
+    return safe
+
+
+@deprecated("use NewThing")
+def decorated_old():
+    return 2
+
+
+def docstring_old():
+    """Do a thing.
+
+    .. deprecated:: 4.2
+        Use thing2 instead.
+    """
+    return 3
+
+
+class DeprecatedClass(Base):
+    def __init__(self, x):
+        warnings.warn("DeprecatedClass is deprecated", category=RemovedInDjango70Warning)
+        super().__init__(x)
+
+
+class LiveClass(Base):
+    """A live class that merely deprecates a method arg."""
+    def __init__(self, x):
+        self.x = x
+
+    def method(self, legacy=None):
+        if legacy is not None:
+            warnings.warn("legacy arg is deprecated", DeprecationWarning)
+        return self.x
+'''
+
+
+def _dep(nodes, qn):
+    return json.loads(_nodes_by_qn(nodes)[qn]["properties"]).get("deprecated", False)
+
+
+def test_deprecation_detected_only_for_whole_symbol():
+    nodes, _ = parse_file("m.py", DEPREC_SRC)
+    # deprecated: unconditional warn, @deprecated decorator, .. deprecated:: docstring,
+    # class whose __init__ unconditionally warns
+    assert _dep(nodes, "m.old_fn") is True
+    assert _dep(nodes, "m.decorated_old") is True
+    assert _dep(nodes, "m.docstring_old") is True
+    assert _dep(nodes, "m.DeprecatedClass") is True
+    # NOT deprecated: guarded/param-level warn (JsonResponse/QuerySet false-positive class)
+    assert _dep(nodes, "m.emits_warn_for_arg") is False
+    assert _dep(nodes, "m.LiveClass") is False
+    assert _dep(nodes, "m.LiveClass.method") is False
+
+
+def test_plain_symbols_not_deprecated():
+    nodes, _ = parse_file("src/demo.py", SRC)
+    assert _dep(nodes, "src.demo.top") is False
+    assert _dep(nodes, "src.demo.Greeter") is False

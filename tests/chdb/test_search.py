@@ -64,3 +64,27 @@ def test_last_page_has_more_false(indexed):
     page = search_graph(indexed, "synth", label="Function", limit=2, offset=n - 1)
     assert page.total == n
     assert page.has_more is False
+
+
+def _insert_node(store, qn, name, props='{}'):
+    store.exec(
+        "INSERT INTO chgraph.nodes "
+        "(project, label, name, qualified_name, file_path, start_line, end_line, properties, version) "
+        f"VALUES ('p', 'Class', '{name}', '{qn}', 'f.py', 1, 2, '{props}', 1)")
+
+
+def test_dep_signal_surfaces_and_flag_demotes(store, monkeypatch):
+    # two same-name classes tying on lexical match; one is deprecated at parse time
+    _insert_node(store, "pkg.Widget", "Widget")
+    _insert_node(store, "old.Widget", "Widget", props='{"deprecated": true}')
+
+    monkeypatch.delenv("CHGRAPH_RANK_DEPRECATION_WEIGHT", raising=False)
+    items = {i["qualified_name"]: i for i in search_graph(store, "p", query="Widget").items}
+    assert items["old.Widget"]["dep"] == 1 and items["pkg.Widget"]["dep"] == 0
+    # default weight 0.0 -> deprecation changes no score (both tie on lex, no git signals)
+    assert items["old.Widget"]["score"] == items["pkg.Widget"]["score"]
+
+    # flag on -> the deprecated twin is demoted below the live one
+    monkeypatch.setenv("CHGRAPH_RANK_DEPRECATION_WEIGHT", "-0.5")
+    ranked = [i["qualified_name"] for i in search_graph(store, "p", query="Widget").items]
+    assert ranked.index("pkg.Widget") < ranked.index("old.Widget")

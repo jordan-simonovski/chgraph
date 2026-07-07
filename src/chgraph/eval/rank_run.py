@@ -1,9 +1,9 @@
 """Run the ranking eval (git-evolution campaign Phase 6) over a goldens file.
 
-For each golden: fetch the daemon's candidate pool, annotate deprecation, then
-score MRR@10 under three configs — blind (lexical only), hybrid (lex+rec+cen),
-and hybrid+dep (adds the deprecation-demotion signal). Reports per-slice means
-against the Phase-6 bar and writes an artifact.
+For each golden: fetch the daemon's candidate pool (each item carries the parse-time
+`dep` property from search_graph), then score MRR@10 under three configs — blind
+(lexical only), hybrid (lex+rec+cen), and hybrid+dep (adds the deprecation-demotion
+signal). Reports per-slice means against the Phase-6 bar and writes an artifact.
 
     python -m chgraph.eval.rank_run
 
@@ -20,27 +20,21 @@ from pathlib import Path
 
 import yaml
 
-from chgraph.client import DaemonClient
-from chgraph.paths import ProjectPaths
-from chgraph.eval.ranking import (RankGolden, annotate_deprecation, daemon_search,
-                                  mrr_at_k, rerank)
+from chgraph.eval.ranking import RankGolden, daemon_search, mrr_at_k, rerank
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 K = 10
-# dep=-0.05: Phase-6 step-3 sweep on django@318a316a (see run provenance) found the
-# passing window dep in [-0.02,-0.08] — both gates clear (staleness gain +0.112,
-# general regression 0.000). Staleness gain saturates at any negative (same-commit
-# deprecate+replace twins tie exactly on lex/rec/cen, so any nudge swaps them);
-# general regresses only past ~-0.10, where the demotion exceeds the lexical margin of
-# a false-positive live symbol (JsonResponse: flagged because its __init__ deprecates
-# the `safe` PARAMETER, not the class). -0.05 sits mid-window with margin from both
-# edges. The prototype's -1.0 was a veto, not a signal — it ejected that false positive
-# from top-10. Detector precision (whole-symbol vs per-parameter deprecation) is known
-# debt; the durable fix is a parse-time node property, routing through change-control.
+# `dep` is now the PRECISE parse-time property (chgraph.parse_python detects whole-symbol
+# deprecation only), so the general slice has zero flagged live symbols — the false-positive
+# cliff that constrained the body-regex prototype (JsonResponse/QuerySet) is gone. Staleness
+# gain saturates at any negative weight (same-commit deprecate+replace twins tie exactly on
+# lex/rec/cen, so any nudge swaps them); general regression stays 0 at any weight. -0.20 is a
+# comfortable interior value. The shipped daemon default is 0.0 (flag
+# CHGRAPH_RANK_DEPRECATION_WEIGHT, see search.py); this eval re-weights the pool offline.
 CONFIGS = {
     "blind":      {"lex": 0.35, "rec": 0.0,  "cen": 0.0,  "dep": 0.0},    # recency-blind baseline
     "hybrid":     {"lex": 0.35, "rec": 0.20, "cen": 0.15, "dep": 0.0},    # current v0.1 ranking
-    "hybrid+dep": {"lex": 0.35, "rec": 0.20, "cen": 0.15, "dep": -0.05},  # + deprecation demotion
+    "hybrid+dep": {"lex": 0.35, "rec": 0.20, "cen": 0.15, "dep": -0.20},  # + deprecation demotion
 }
 
 
@@ -48,19 +42,13 @@ def load_rank_goldens(path: str | Path) -> list[RankGolden]:
     return [RankGolden(**g) for g in yaml.safe_load(Path(path).read_text())]
 
 
-def _snippet_fn(checkout: str):
-    sock = ProjectPaths.for_repo(os.path.realpath(checkout)).socket
-    client = DaemonClient(sock)
-    return lambda qn: (client.call("snippet", qualified_name=qn) or {}).get("text", "")
-
-
 def run(goldens: list[RankGolden]) -> dict:
-    # per-slice, per-config list of reciprocal ranks
+    # per-slice, per-config list of reciprocal ranks. The pool's `dep` field is the
+    # parse-time `deprecated` node property surfaced by search_graph — no body-regex.
     scores: dict[str, dict[str, list]] = defaultdict(lambda: {c: [] for c in CONFIGS})
     for g in goldens:
         checkout = str(REPO_ROOT / "evals" / ".cache" / g.repo)
         pool = daemon_search(checkout, g.query, limit=50)
-        annotate_deprecation(pool, _snippet_fn(checkout))
         for cfg, w in CONFIGS.items():
             scores[g.slice][cfg].append(mrr_at_k(rerank(pool, w), g.expected, K))
     report = {"k": K, "slices": {}}

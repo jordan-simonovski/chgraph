@@ -1,8 +1,7 @@
 """Ranking eval (git-evolution campaign Phase 6): does hybrid ranking beat a
 recency-blind baseline? Re-rank the same candidate pool two ways, score MRR@10.
 Pure logic (rerank + MRR); the search call is injected."""
-from chgraph.eval.ranking import (rerank, mrr_at_k, evaluate, RankGolden,
-                                   is_deprecated_body, annotate_deprecation)
+from chgraph.eval.ranking import rerank, mrr_at_k, evaluate, RankGolden
 
 HYBRID = {"lex": 0.35, "rec": 0.20, "cen": 0.15}
 BLIND = {"lex": 0.35, "rec": 0.0, "cen": 0.0}   # recency+centrality zeroed (Phase 6 baseline)
@@ -19,23 +18,14 @@ def test_rerank_orders_by_weighted_signals():
     assert rerank(cands, BLIND) == ["a.stale", "a.live"]  # stale stays ahead => the failure mode
 
 
-def test_is_deprecated_body_detects_markers():
-    assert is_deprecated_body("class X:\n    warnings.warn('RemovedInDjango60Warning')")
-    assert is_deprecated_body("# this is deprecated, use Y instead")
-    assert is_deprecated_body("@deprecated\ndef old(): ...")
-    assert not is_deprecated_body("def live():\n    return compute()")
-
-
-def test_annotate_deprecation_flags_and_demotes():
+def test_dep_signal_from_pool_demotes_stale_twin():
+    # `dep` arrives on the pool item from search_graph (parse-time property), not a regex.
     cands = [
-        {"qualified_name": "pg.StringAgg", "lex": 1.0, "rec": 0.169, "cen": 0.0},
-        {"qualified_name": "db.StringAgg", "lex": 1.0, "rec": 0.169, "cen": 0.0},
+        {"qualified_name": "pg.StringAgg", "lex": 1.0, "rec": 0.169, "cen": 0.0, "dep": 1},
+        {"qualified_name": "db.StringAgg", "lex": 1.0, "rec": 0.169, "cen": 0.0, "dep": 0},
     ]
-    bodies = {"pg.StringAgg": "raise RemovedInDjango70Warning", "db.StringAgg": "def ok(): pass"}
-    annotate_deprecation(cands, lambda qn: bodies[qn])
-    assert [c["dep"] for c in cands] == [1, 0]
-    # with a demotion weight the live symbol now wins the lexical tie the recency signal couldn't break
-    W = {"lex": 0.35, "rec": 0.20, "cen": 0.15, "dep": -1.0}
+    # tie on lex/rec/cen; a negative dep weight lifts the live twin above the stale one
+    W = {"lex": 0.35, "rec": 0.20, "cen": 0.15, "dep": -0.20}
     assert rerank(cands, W)[0] == "db.StringAgg"
 
 
