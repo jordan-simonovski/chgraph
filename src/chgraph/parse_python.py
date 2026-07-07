@@ -11,12 +11,12 @@ from tree_sitter import Language, Parser
 _PY = Language(tspython.language())
 _parser = Parser(_PY)
 
-# A symbol is DEPRECATED (whole-symbol, not "mentions deprecation") iff it
-# unconditionally issues a deprecation warning in its own body — the marker is a
-# direct body statement, not nested in if/try/…, and not a comment. This is what
-# separates a deprecated symbol from a live one that merely deprecates a parameter
-# (django's JsonResponse/QuerySet false-positive class; see chgraph-git-evolution-campaign
-# Phase-6 promotion). Detected here at parse time; a coarse body-text regex is retired.
+# A symbol is DEPRECATED (whole-symbol, not "mentions deprecation") iff it carries an
+# `@deprecated`-named decorator, or unconditionally issues a deprecation warning in its own
+# body — a direct body statement, not nested in if/try/…, not a comment. This separates a
+# deprecated symbol from a live one that merely deprecates a parameter (django's
+# JsonResponse/QuerySet, sqlalchemy's relationship/and_/or_). Detected at parse time; the
+# coarse body-text regex and the ambiguous `.. deprecated::` docstring signal are retired.
 _DEP_TOKEN = re.compile(r"(?:Pending)?DeprecationWarning\b|RemovedIn\w*Warning\b")
 
 
@@ -59,19 +59,18 @@ def _has_deprecated_decorator(node, text) -> bool:
     return False
 
 
-def _docstring_marks_deprecated(body, text) -> bool:
-    if body is None or not body.named_children:
-        return False
-    first = body.named_children[0]
-    return (first.type == "expression_statement" and bool(first.named_children)
-            and first.named_children[0].type == "string"
-            and ".. deprecated::" in text(first.named_children[0]))
-
-
 def _is_deprecated_def(node, text) -> bool:
-    """Whole-symbol deprecation for a function_definition/class_definition node."""
+    """Whole-symbol deprecation for a function_definition/class_definition node.
+
+    Two precise signals only: an `@deprecated`-named decorator, or an unconditional
+    deprecation warn in the symbol's own body (or __init__). A `.. deprecated::` docstring
+    directive is deliberately NOT a signal — docstrings document deprecated *parameters* and
+    calling conventions inline (sqlalchemy `relationship`/`and_`/`or_` carry such directives
+    while the symbol itself is live), so it false-positives. Recall cost: a symbol deprecated
+    ONLY via docstring (no decorator, no warn) is missed — acceptable, precision-first, since a
+    false demotion of live code is worse than a missed stale one."""
     body = node.child_by_field_name("body")
-    if _has_deprecated_decorator(node, text) or _docstring_marks_deprecated(body, text):
+    if _has_deprecated_decorator(node, text):
         return True
     if node.type == "function_definition":
         return _body_unconditionally_warns(body, text)
