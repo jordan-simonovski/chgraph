@@ -41,10 +41,20 @@ def _body_unconditionally_warns(body, text) -> bool:
         _stmt_issues_dep_warning(c, text) for c in body.named_children)
 
 
+def _decorator_name(dec, text) -> str:
+    """Final dotted component of a decorator's callable — 'deprecated' for
+    @deprecated, @deprecated(...), @warnings.deprecated, @x.deprecated(...). Match on the
+    NAME, never the arguments: @ignore_warnings(message='X is deprecated') is not @deprecated."""
+    expr = dec.named_children[0] if dec.named_children else None
+    if expr is not None and expr.type == "call":
+        expr = expr.child_by_field_name("function")
+    return text(expr).rsplit(".", 1)[-1] if expr is not None else ""
+
+
 def _has_deprecated_decorator(node, text) -> bool:
     parent = node.parent
     if parent is not None and parent.type == "decorated_definition":
-        return any(c.type == "decorator" and re.search(r"\bdeprecated\b", text(c))
+        return any(c.type == "decorator" and _decorator_name(c, text) == "deprecated"
                    for c in parent.named_children)
     return False
 

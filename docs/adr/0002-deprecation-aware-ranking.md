@@ -95,7 +95,26 @@ Index-sanity on the re-indexed corpus (daemon status, VERIFIED 2026-07-08): 2924
 
 Unit + integration: parser detection tests (synthetic + real django BitAnd=True /
 JsonResponse=QuerySet=False) + a chdb end-to-end test (`dep` surfaces; default 0.0 is a no-op;
-flag demotes the stale twin). Full suite 85 green.
+flag demotes the stale twin). Full suite green.
+
+**Second-corpus precision audit** (`evals/precision_audit.py`, `evals/runs/precision-2026-07-08.json`,
+VERIFIED 2026-07-08) — the risk a default flip must retire is a false-positive demotion of live
+code on some other codebase:
+
+| repo | symbols | flagged | precision |
+|---|---|---|---|
+| django | 43,432 | 15 (0.03%) | 15/15 genuine whole-symbol deprecations (postgres aggregates, `savepoint`, `sanitize_address`, `forbid_multi_line_headers`, `SQLCompiler.quote_name_unless_alias`, `Action.__iter__/__getitem__`, `OrderableAggMixin.__init_subclass__`) — each hand-verified to carry an unconditional deprecation warn |
+| flask  | 1,620  | 0 | zero false positives; all 4 of flask's deprecation sites are correctly excluded (guarded `if`, a `.. deprecated::` on a class *attribute* which isn't a symbol node, guarded `__getattr__`) |
+
+On flask, `dep=-0.20` changes **no** ranking (0 flagged → the signal is a provable no-op across all
+1,620 symbols) — an exhaustive no-regression result, not a sampled one. Caveat: flask has no
+deprecation twins, so the *staleness benefit* remains django-only evidence; the second corpus
+confirms precision / no-regression, which is the flip's risk.
+
+The audit caught and fixed a real detector bug: `_has_deprecated_decorator` matched the word
+"deprecated" anywhere in a decorator's text, so django's `@ignore_warnings(message="…is
+deprecated")` (which SUPPRESSES a warning) false-flagged 3 live test classes. Fixed to match the
+decorator's callable *name* (`deprecated`), never its arguments; regression test added.
 
 ## Rollback
 

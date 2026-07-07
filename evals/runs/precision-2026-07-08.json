@@ -1,0 +1,32 @@
+{
+  "repos": {
+    "django": {
+      "symbols": 43432,
+      "flagged": [
+        "django.contrib.admin.options.Action.__getitem__",
+        "django.contrib.admin.options.Action.__iter__",
+        "django.contrib.postgres.aggregates.general.BitAnd",
+        "django.contrib.postgres.aggregates.general.BitAnd.__init__",
+        "django.contrib.postgres.aggregates.general.BitOr",
+        "django.contrib.postgres.aggregates.general.BitOr.__init__",
+        "django.contrib.postgres.aggregates.general.BitXor",
+        "django.contrib.postgres.aggregates.general.BitXor.__init__",
+        "django.contrib.postgres.aggregates.general.StringAgg",
+        "django.contrib.postgres.aggregates.general.StringAgg.__init__",
+        "django.contrib.postgres.aggregates.mixins.OrderableAggMixin.__init_subclass__",
+        "django.core.mail.message.forbid_multi_line_headers",
+        "django.core.mail.message.sanitize_address",
+        "django.db.models.sql.compiler.SQLCompiler.quote_name_unless_alias",
+        "django.db.transaction.savepoint"
+      ],
+      "flagged_count": 15,
+      "flagged_pct": 0.0345
+    },
+    "flask": {
+      "symbols": 1620,
+      "flagged": [],
+      "flagged_count": 0,
+      "flagged_pct": 0.0
+    }
+  }
+}

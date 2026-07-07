@@ -136,6 +136,13 @@ class LiveClass(Base):
         if legacy is not None:
             warnings.warn("legacy arg is deprecated", DeprecationWarning)
         return self.x
+
+
+@ignore_warnings(category=DeprecationWarning, message="X is deprecated")
+class SuppressesWarnings(Base):
+    """Live test helper decorated to SUPPRESS a deprecation warning - not deprecated."""
+    def run(self):
+        return 1
 '''
 
 
@@ -155,6 +162,9 @@ def test_deprecation_detected_only_for_whole_symbol():
     assert _dep(nodes, "m.emits_warn_for_arg") is False
     assert _dep(nodes, "m.LiveClass") is False
     assert _dep(nodes, "m.LiveClass.method") is False
+    # NOT deprecated: a decorator that only MENTIONS "deprecated" in its args (django's
+    # @ignore_warnings suppresses the warning) — match the decorator name, not its text.
+    assert _dep(nodes, "m.SuppressesWarnings") is False
 
 
 def test_plain_symbols_not_deprecated():
