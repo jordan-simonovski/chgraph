@@ -1,12 +1,21 @@
 # Ranking-eval goldens (git-evolution campaign Phase 6). query -> expected live symbol.
-# STATUS: derived from django @318a316a; verified: each expected qn confirmed present, and
-# each staleness pair confirmed as a same-name (live db.models vs deprecated postgres) collision.
-# Small first slice (n=4 staleness) — grow before quoting a headline number.
+# STATUS: derived from django @318a316a; machine-verified 2026-07-08 against the live index
+# (each expected qn present; staleness pairs confirmed same-name live/deprecated collisions;
+# each general `dep-trap` confirmed flagged dep=1 yet correctly #1 under blind). verified:false
+# until human sign-off per validation-and-qa §4.
 #
-# staleness: pool contains a stale near-duplicate of `expected`; recency alone can't separate
-#            them (deprecate+replace landed in one commit). Tests the flagship thesis.
-# general:   no stale twin; canonical symbol ranks #1 under blind. Regression guard against
-#            over-demotion / deprecation false-positives.
+# staleness (n=4): pool contains a stale near-duplicate of `expected`; recency alone can't
+#            separate them (deprecate+replace landed in one commit). Tests the flagship thesis.
+#            NOTE: the clean same-name twin family in django@318a316a is exactly the 4 postgres
+#            aggregates below (only `class X(_X)` deprecation shims) — the set is exhausted, not
+#            thin by neglect. More would need a different repo or a different staleness shape.
+# general (n=10): canonical symbol ranks #1 under blind, no staleness angle. Over-demotion guard.
+#            The 6 `dep-trap` entries are LIVE symbols whose body carries a deprecation marker
+#            (they deprecate a param/method, not themselves) — the exact JsonResponse false-
+#            positive class. They prove dep=-0.05 doesn't eject a flagged-but-live symbol that
+#            has lexical dominance. (Counter-case found but NOT a golden: `QuerySet` is flagged
+#            dep=1, ranks only 5th under blind amid 50 name-collisions, and -0.05 ejects it from
+#            top-10 — evidence the parse-time whole-symbol detector is required for promotion.)
 
 - {query: StringAgg, expected: django.db.models.aggregates.StringAgg, repo: django, slice: staleness}
 - {query: BitAnd,    expected: django.db.models.aggregates.BitAnd,    repo: django, slice: staleness}
@@ -16,5 +25,13 @@
 - {query: HttpResponseRedirect, expected: django.http.response.HttpResponseRedirect, repo: django, slice: general}
 - {query: SuspiciousOperation,  expected: django.core.exceptions.SuspiciousOperation, repo: django, slice: general}
 - {query: FieldDoesNotExist,    expected: django.core.exceptions.FieldDoesNotExist,   repo: django, slice: general}
-- {query: JsonResponse,         expected: django.http.response.JsonResponse,          repo: django, slice: general}
 - {query: SimpleLazyObject,     expected: django.utils.functional.SimpleLazyObject,   repo: django, slice: general}
+
+# dep-trap: live symbol whose body carries a deprecation marker (deprecates a param/method,
+# not itself). Must stay #1 under hybrid+dep — regression guard for the -0.05 weight.
+- {query: JsonResponse,             expected: django.http.response.JsonResponse,            repo: django, slice: general}
+- {query: EmailMultiAlternatives,   expected: django.core.mail.message.EmailMultiAlternatives, repo: django, slice: general}
+- {query: AdminEmailHandler,        expected: django.utils.log.AdminEmailHandler,           repo: django, slice: general}
+- {query: LazySettings,             expected: django.conf.LazySettings,                     repo: django, slice: general}
+- {query: BasePaginator,            expected: django.core.paginator.BasePaginator,          repo: django, slice: general}
+- {query: Urlizer,                  expected: django.utils.html.Urlizer,                    repo: django, slice: general}

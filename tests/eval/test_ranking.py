@@ -39,6 +39,29 @@ def test_annotate_deprecation_flags_and_demotes():
     assert rerank(cands, W)[0] == "db.StringAgg"
 
 
+def test_dep_weight_is_a_signal_not_a_veto():
+    """Phase-6 fix: dep must be a moderate weight, not a -1.0 veto. A veto ejects a
+    false-positive live symbol (one that deprecates a PARAMETER, so its body carries a
+    marker) out of top-k; a moderate weight demotes true stale twins (which tie on real
+    signals) while a false positive's lexical margin keeps it #1. Same body-mention
+    detector for both — the weight is what separates the failure modes."""
+    stale, live = ({"qualified_name": "pg.X", "lex": 1.0, "rec": 0.5, "cen": 0.0, "dep": 1},
+                   {"qualified_name": "db.X", "lex": 1.0, "rec": 0.5, "cen": 0.0, "dep": 0})
+    # false positive: canonical live symbol flagged dep=1 but leads the pool on lexical match
+    fp = {"qualified_name": "http.JsonResponse", "lex": 1.0, "rec": 0.3, "cen": 0.2, "dep": 1}
+    others = [{"qualified_name": f"m{i}", "lex": 0.5, "rec": 0.3, "cen": 0.2, "dep": 0}
+              for i in range(12)]
+
+    moderate = {"lex": 0.35, "rec": 0.20, "cen": 0.15, "dep": -0.05}
+    veto = {"lex": 0.35, "rec": 0.20, "cen": 0.15, "dep": -1.0}
+
+    # true stale twin: demoted below its live twin under either weight (they tie otherwise)
+    assert rerank([stale, live], moderate)[0] == "db.X"
+    # false positive: survives at #1 under the moderate weight, but the veto ejects it
+    assert rerank([fp, *others], moderate)[0] == "http.JsonResponse"
+    assert mrr_at_k(rerank([fp, *others], veto), "http.JsonResponse", k=10) == 0.0
+
+
 def test_mrr_at_k():
     assert mrr_at_k(["x", "y", "target", "z"], "target", k=10) == 1 / 3
     assert mrr_at_k(["target", "y"], "target", k=10) == 1.0
