@@ -3,12 +3,30 @@ Ranking shape verified in chgraph-git-evolution-campaign Phase 5; weights are th
 campaign's DECIDED starting defaults. Lexical is the placeholder binary signal —
 upgrading it is retrieval-affecting (eval gate, INV-4).
 eval: not yet run — harness not built."""
+import os
 from dataclasses import dataclass
 
 from chgraph.evolution import DEFAULT_HALF_LIFE_DAYS, _q
 from chgraph.store import Store
 
 W = {"lex": 0.35, "vec": 0.30, "rec": 0.20, "cen": 0.15}  # one code home; doc home: campaign Phase 5
+
+
+def _dep_weight() -> float:
+    """Weight applied to the parse-time `deprecated` node property in the hybrid score.
+
+    Flag: chgraph_rank_deprecation_weight (env CHGRAPH_RANK_DEPRECATION_WEIGHT)
+    Default: 0.0 — current behavior; adding this flag changes no query result by itself.
+    Label: experimental. Owner: git-evolution campaign.
+    Validated: eval run rank-2026-07-08 (staleness +0.112, general reg 0.000) at -0.05 on the
+      body-regex prototype; the parse-time detector is at least as clean (no false positives).
+    Re-verify: CHGRAPH_RANK_DEPRECATION_WEIGHT=-0.05 python -m chgraph.eval.rank_run
+    Retire: harden to a -0.05 default once a second corpus confirms (campaign Phase-6 step-4).
+    """
+    try:
+        return float(os.environ.get("CHGRAPH_RANK_DEPRECATION_WEIGHT", "0.0"))
+    except ValueError:
+        return 0.0
 
 
 @dataclass
@@ -35,6 +53,7 @@ def search_graph(store: Store, project: str, query: str | None = None,
     where = " AND ".join(conds)
     lex_expr = (f"if(positionCaseInsensitive(n.name, {_q(query)}) > 0, 1.0, 0.5)"
                 if query else "0.0")
+    w_dep = _dep_weight()
 
     sql = f"""
     WITH
@@ -56,7 +75,9 @@ def search_graph(store: Store, project: str, query: str | None = None,
         round({lex_expr}, 3)                                    AS lex,
         round(coalesce(r.r, 0), 3)                              AS rec,
         round(coalesce(d.deg, 0) / (SELECT m FROM maxdeg), 3)   AS cen,
-        round({W['lex']} * lex + {W['rec']} * rec + {W['cen']} * cen, 4) AS score
+        toUInt8(JSONExtractBool(n.properties, 'deprecated'))    AS dep,
+        round({W['lex']} * lex + {W['rec']} * rec + {W['cen']} * cen
+              + {w_dep} * dep, 4)                               AS score
     FROM chgraph.nodes AS n FINAL
     LEFT JOIN recency AS r ON n.file_path = r.path
     LEFT JOIN degree AS d ON n.qualified_name = d.qn

@@ -11,19 +11,16 @@ this is deterministic and needs no API spend.
 """
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from typing import Callable
 
-SIGNALS = ("lex", "rec", "cen")
+SIGNALS = ("lex", "rec", "cen", "dep")
 
-# EXPERIMENTAL staleness signal (campaign Phase 5 candidate): file-level recency can't
-# separate deprecated-in-place code from its replacement (both touched in the same PR).
-# A deprecation marker in the symbol body is a direct, recency-independent staleness signal.
-# Prototype only — productionizing means detecting this at parse time (node property) and
-# routes through chgraph-change-control.
-_DEPRECATION_RE = re.compile(
-    r"RemovedIn\w*Warning|DeprecationWarning|@deprecated|\bis deprecated\b", re.IGNORECASE)
+# The `dep` signal is the parse-time `deprecated` node property (chgraph.parse_python),
+# surfaced by search_graph. It is a recency-independent staleness signal: file-level
+# recency can't separate deprecated-in-place code from its replacement (both touched in the
+# same PR). The earlier body-text regex prototype is retired — precise whole-symbol detection
+# now has one home in the parser.
 
 
 @dataclass(frozen=True)
@@ -48,18 +45,6 @@ def mrr_at_k(ranked: list[str], expected: str, k: int = 10) -> float:
         if qn == expected:
             return 1.0 / i
     return 0.0
-
-
-def is_deprecated_body(text: str) -> bool:
-    return bool(_DEPRECATION_RE.search(text or ""))
-
-
-def annotate_deprecation(candidates: list[dict], snippet_fn: Callable[[str], str]) -> list[dict]:
-    """Set candidate['dep'] = 1 if the symbol's source carries a deprecation marker, else 0.
-    Feed a negative 'dep' weight to rerank() to demote deprecated symbols."""
-    for c in candidates:
-        c["dep"] = 1 if is_deprecated_body(snippet_fn(c["qualified_name"])) else 0
-    return candidates
 
 
 SearchFn = Callable[[str, str], list[dict]]  # (query, repo) -> candidate pool

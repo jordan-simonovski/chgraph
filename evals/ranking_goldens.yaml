@@ -11,11 +11,12 @@
 #            thin by neglect. More would need a different repo or a different staleness shape.
 # general (n=10): canonical symbol ranks #1 under blind, no staleness angle. Over-demotion guard.
 #            The 6 `dep-trap` entries are LIVE symbols whose body carries a deprecation marker
-#            (they deprecate a param/method, not themselves) — the exact JsonResponse false-
-#            positive class. They prove dep=-0.05 doesn't eject a flagged-but-live symbol that
-#            has lexical dominance. (Counter-case found but NOT a golden: `QuerySet` is flagged
-#            dep=1, ranks only 5th under blind amid 50 name-collisions, and -0.05 ejects it from
-#            top-10 — evidence the parse-time whole-symbol detector is required for promotion.)
+#            (they deprecate a param/method, not themselves) — the JsonResponse false-positive
+#            class. The coarse body-regex prototype mis-flagged them; the parse-time detector
+#            (ADR-0002, chgraph.parse_python) correctly leaves them dep=0, so they stay #1 at any
+#            dep weight. They now guard against a future detector regression re-flagging them.
+#            (`QuerySet` was the counter-case that forced parse-time detection: the regex flagged
+#            it and a demotion ejected it from top-10; the parser now leaves it dep=0.)
 
 - {query: StringAgg, expected: django.db.models.aggregates.StringAgg, repo: django, slice: staleness}
 - {query: BitAnd,    expected: django.db.models.aggregates.BitAnd,    repo: django, slice: staleness}
