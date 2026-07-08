@@ -1,0 +1,11 @@
+# Semantic ranking goldens (vector signal, ADR-0004). Natural-language query -> expected symbol
+# whose NAME the query does NOT lexically contain, so the lexical candidate filter alone returns an
+# empty/miss pool — only the vector signal (embedded name + docstring) surfaces it. Measures vector
+# RECALL, not re-ranking: the metric is MRR@10 with CHGRAPH_RANK_VECTOR on vs off.
+# STATUS: flask @36e4a824, machine-verified 2026-07-08 (each expected qn rank 1 under vector,
+# absent under vector-off). verified:false until human sign-off (validation-and-qa §4). Starter n=4.
+
+- {query: "build a url for a named endpoint",          expected: src.flask.helpers.url_for,            repo: flask, slice: semantic}
+- {query: "send a file to the client as a response",   expected: src.flask.helpers.send_file,          repo: flask, slice: semantic}
+- {query: "abort the request with an http status error", expected: src.flask.helpers.abort,            repo: flask, slice: semantic}
+- {query: "open a resource file relative to the app",  expected: src.flask.app.Flask.open_resource,    repo: flask, slice: semantic}

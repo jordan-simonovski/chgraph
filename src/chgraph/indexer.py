@@ -6,10 +6,12 @@ import tempfile
 from dataclasses import dataclass, field
 from typing import Callable
 
+from chgraph import embeddings
 from chgraph.evolution import _q, refresh_file_evolution
 from chgraph.gitingest import ingest_git, verify_git_counts
 from chgraph.parse_python import parse_file
 from chgraph.store import Store
+from chgraph.text import subtokens
 
 # Candidate threshold, label OPEN (validation-and-qa §5): calibrate before trusting.
 # Plain Python code sits well above this; near-zero means the parser silently failed.
@@ -58,10 +60,13 @@ def index_repository(store: Store, project: str, repo_root: str,
     # to collapse against and lingers as a ghost node/edge.
     store.exec("TRUNCATE TABLE chgraph.nodes")
     store.exec("TRUNCATE TABLE chgraph.edges")
+    store.exec("TRUNCATE TABLE chgraph.embeddings")
 
     files = _py_files(repo_root)
     node_rows: list[dict] = []
     edge_rows: list[dict] = []
+    embed_texts: list[str] = []       # parallel to embed_qns: symbol embed-text (name + docstring)
+    embed_qns: list[str] = []
     total_lines = 0
     done = 0
     for rel in files:
@@ -69,6 +74,10 @@ def index_repository(store: Store, project: str, repo_root: str,
         total_lines += src.count(b"\n") + 1
         nodes, edges = parse_file(rel, src)   # pure Python — never raises on bad syntax,
         for n in nodes:                       # tree-sitter yields a partial tree instead
+            doc = n.pop("doc", "")            # transient: embed-text input, not a nodes column
+            if n["label"] != "File":
+                embed_qns.append(n["qualified_name"])
+                embed_texts.append((" ".join(subtokens(n["name"])) + ". " + doc).strip())
             node_rows.append({**n, "project": project, "version": version})
         for e in edges:
             edge_rows.append({**e, "project": project, "version": version})
@@ -80,6 +89,16 @@ def index_repository(store: Store, project: str, repo_root: str,
     _batch_insert(store, "chgraph.edges", edge_rows)
     store.exec("OPTIMIZE TABLE chgraph.nodes FINAL")
     store.exec("OPTIMIZE TABLE chgraph.edges FINAL")
+
+    # Optional vector signal (ADR-0004): embed symbols if fastembed is installed, else skip
+    # silently — core indexing is unaffected and the vector signal stays inert.
+    if embeddings.available() and embed_qns:
+        vecs = embeddings.embed(embed_texts)
+        _batch_insert(store, "chgraph.embeddings", [
+            {"project": project, "qualified_name": qn, "vec": v, "version": version}
+            for qn, v in zip(embed_qns, vecs)
+        ])
+        store.exec("OPTIMIZE TABLE chgraph.embeddings FINAL")
 
     reasons: list[str] = []
     reasons += verify_git_counts(repo_root, ingest_git(store, project, repo_root))
