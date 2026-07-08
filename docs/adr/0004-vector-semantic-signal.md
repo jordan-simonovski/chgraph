@@ -2,7 +2,10 @@
 
 - Status: Accepted
 - Date: 2026-07-08
-- Class: retrieval-affecting + infra-dependency (optional) + index-integrity (parser docstring + embeddings population). No schema-migration — the `chgraph.embeddings` table already exists (campaign Phase-5 DDL).
+- Class: retrieval-affecting + infra-dependency (optional). The parser docstring extraction and
+  embeddings population ride under retrieval-affecting (they change what a query returns) and pass
+  index-sanity. No schema-migration — the `chgraph.embeddings` table already exists (campaign
+  Phase-5 DDL).
 - Owner: git-evolution campaign (Phase-5 vector signal)
 
 ## Context

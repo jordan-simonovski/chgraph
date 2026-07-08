@@ -10,8 +10,8 @@ from chgraph import embeddings
 from chgraph.evolution import _q, refresh_file_evolution
 from chgraph.gitingest import ingest_git, verify_git_counts
 from chgraph.parse_python import parse_file
-from chgraph.search import _subtokens
 from chgraph.store import Store
+from chgraph.text import subtokens
 
 # Candidate threshold, label OPEN (validation-and-qa §5): calibrate before trusting.
 # Plain Python code sits well above this; near-zero means the parser silently failed.
@@ -77,7 +77,7 @@ def index_repository(store: Store, project: str, repo_root: str,
             doc = n.pop("doc", "")            # transient: embed-text input, not a nodes column
             if n["label"] != "File":
                 embed_qns.append(n["qualified_name"])
-                embed_texts.append((" ".join(_subtokens(n["name"])) + ". " + doc).strip())
+                embed_texts.append((" ".join(subtokens(n["name"])) + ". " + doc).strip())
             node_rows.append({**n, "project": project, "version": version})
         for e in edges:
             edge_rows.append({**e, "project": project, "version": version})

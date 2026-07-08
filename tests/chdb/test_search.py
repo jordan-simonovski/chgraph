@@ -92,10 +92,10 @@ def test_dep_signal_surfaces_and_flag_demotes(store, monkeypatch):
 
 
 def test_subtokens_splits_identifiers():
-    from chgraph.search import _subtokens
-    assert _subtokens("HttpResponseRedirect") == ["http", "response", "redirect"]
-    assert _subtokens("get_user_by_id") == ["get", "user", "by", "id"]
-    assert _subtokens("XMLHttpRequest2") == ["xml", "http", "request2"]  # trailing digit attaches
+    from chgraph.text import subtokens
+    assert subtokens("HttpResponseRedirect") == ["http", "response", "redirect"]
+    assert subtokens("get_user_by_id") == ["get", "user", "by", "id"]
+    assert subtokens("XMLHttpRequest2") == ["xml", "http", "request2"]  # trailing digit attaches
 
 
 def test_jaccard_lexical_ranks_exact_above_partial(store, monkeypatch):
@@ -123,9 +123,12 @@ def _insert_embedding(store, qn, vec):
 
 def test_vector_signal_surfaces_non_lexical_match(store, monkeypatch):
     from chgraph import embeddings, search
-    # two symbols; the query lexically matches NEITHER name
+    # two symbols the query lexically matches NEITHER name, plus one UN-embedded symbol that a
+    # later lexical query does match (exercises the length(e.vec)=EMBED_DIM null-vec guard —
+    # cosineDistance on the LEFT-JOIN-missing empty vector would otherwise raise)
     _insert_node(store, "pkg.render", "render")
     _insert_node(store, "pkg.template", "template")
+    _insert_node(store, "pkg.render_helper", "render_helper")   # no embedding row
     e_render = [1.0] + [0.0] * (embeddings.EMBED_DIM - 1)
     e_template = [0.0, 1.0] + [0.0] * (embeddings.EMBED_DIM - 2)
     _insert_embedding(store, "pkg.render", e_render)
@@ -140,6 +143,12 @@ def test_vector_signal_surfaces_non_lexical_match(store, monkeypatch):
     assert "pkg.render" in qns                      # pulled in by vector despite zero lexical match
     top = items[0]
     assert top["qualified_name"] == "pkg.render" and top["vec"] == 1.0
+
+    # null-vec guard: a lexical query pulls in the un-embedded `render_helper` as a candidate;
+    # its missing embedding must yield vec=0.0, not a cosineDistance size-mismatch error
+    monkeypatch.setattr(embeddings, "embed_query", lambda q: e_render)
+    lex = {i["qualified_name"]: i for i in search_graph(store, "p", query="render").items}
+    assert lex["pkg.render_helper"]["vec"] == 0.0 and lex["pkg.render"]["vec"] == 1.0
 
     # flag off -> no lexical match -> the vector candidate is gone
     monkeypatch.setenv("CHGRAPH_RANK_VECTOR", "off")

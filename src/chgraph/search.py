@@ -1,29 +1,20 @@
-"""search_graph: candidate filter + hybrid-lite ranking.
-Ranking shape verified in chgraph-git-evolution-campaign Phase 5; weights are the
-campaign's DECIDED starting defaults. Lexical is identifier-aware subtoken Jaccard
-(ADR-0003, flag chgraph_rank_lexical); the deprecated `dep` signal comes from the
-parse-time node property (ADR-0002). Both are retrieval-affecting (eval gate, INV-4)."""
+"""search_graph: candidate filter + hybrid ranking. Three scored signals (weights are the
+campaign's DECIDED starting defaults, W below): identifier-aware subtoken-Jaccard lexical
+(ADR-0003, flag chgraph_rank_lexical), vector semantic similarity over name+docstring
+embeddings (ADR-0004, flag chgraph_rank_vector), and a parse-time `dep` demotion (ADR-0002,
+flag chgraph_rank_deprecation_weight), plus recency + centrality. All retrieval-affecting
+(eval gate, INV-4)."""
 import os
-import re
 from dataclasses import dataclass
 
 from chgraph import embeddings
 from chgraph.evolution import DEFAULT_HALF_LIFE_DAYS, _q
 from chgraph.store import Store
+from chgraph.text import subtokens
 
 VEC_CANDIDATES = 100   # how many nearest-neighbour symbols the vector path adds to the pool
 
 W = {"lex": 0.35, "vec": 0.30, "rec": 0.20, "cen": 0.15}  # one code home; doc home: campaign Phase 5
-
-# Identifier subtoken splitter — the VERIFIED RE2-safe two-pass form (code-graph-reference):
-# split acronym->word boundaries then lower->Upper boundaries, then on non-alphanumerics.
-_ACRONYM = re.compile(r"([A-Z]+)([A-Z][a-z])")
-_CAMEL = re.compile(r"([a-z0-9])([A-Z])")
-
-
-def _subtokens(s: str) -> list[str]:
-    s = _CAMEL.sub(r"\1 \2", _ACRONYM.sub(r"\1 \2", s))
-    return [t for t in re.split(r"[^A-Za-z0-9]+", s.lower()) if t]
 
 
 def _lexical_mode() -> str:
@@ -42,8 +33,17 @@ def _lexical_mode() -> str:
 
 
 def _vector_on(store: Store, project: str, query: str | None) -> bool:
-    """Vector signal active? Needs a text query, fastembed installed (flag on), and this
-    project actually embedded. Flag: CHGRAPH_RANK_VECTOR = on|off (default on)."""
+    """Vector signal active? Needs a text query, fastembed installed, the flag on, and this
+    project actually embedded.
+
+    Flag: chgraph_rank_vector (env CHGRAPH_RANK_VECTOR) = on | off
+    Default: on — but inert until the optional `embeddings` dep is installed AND the repo is
+      re-indexed (both deliberate acts), so merging changes no query result by itself.
+    Label: prod. Owner: git-evolution campaign.
+    Validated (ADR-0004, semantic goldens flask): MRR@10 0.000 (off) -> 1.000 (on).
+    Re-verify: CHGRAPH_RANK_VECTOR=off vs on over evals/semantic_goldens.yaml (ADR-0004 §Verification).
+    Retire: flag retained as an `off` escape hatch (not removed) — reversible disable, no re-index.
+    """
     if not query or os.environ.get("CHGRAPH_RANK_VECTOR", "on").lower() == "off":
         return False
     if not embeddings.available():
@@ -75,11 +75,11 @@ def _lex_expr(query: str | None) -> str:
         return "0.0"
     if _lexical_mode() == "binary":
         return f"if(positionCaseInsensitive(n.name, {_q(query)}) > 0, 1.0, 0.5)"
-    qtoks = _subtokens(query)
+    qtoks = subtokens(query)
     if not qtoks:                       # query had no alphanumerics — fall back to substring
         return f"if(positionCaseInsensitive(n.name, {_q(query)}) > 0, 1.0, 0.5)"
     qarr = "[" + ",".join(_q(t) for t in qtoks) + "]"
-    # per-row name subtokens via the two-pass boundary split (mirrors _subtokens)
+    # per-row name subtokens via the two-pass boundary split (mirrors text.subtokens)
     nst = ("arrayFilter(x -> x != '', splitByRegexp('[^A-Za-z0-9]+', lower("
            "replaceRegexpAll(replaceRegexpAll(n.name, '([A-Z]+)([A-Z][a-z])', '\\1 \\2'), "
            "'([a-z0-9])([A-Z])', '\\1 \\2'))))")
@@ -125,12 +125,21 @@ def search_graph(store: Store, project: str, query: str | None = None,
     lex_expr = _lex_expr(query)
     w_dep = _dep_weight()
 
-    vec_top_cte = (f"vec_top AS (SELECT qualified_name FROM chgraph.embeddings "
-                   f"WHERE project = {_q(project)} ORDER BY cosineDistance(vec, {qlit}) ASC "
-                   f"LIMIT {VEC_CANDIDATES}),\n" if vec_on else "")
+    # FINAL on the embeddings reads mirrors the nodes/edges reads: TRUNCATE-on-reindex keeps one
+    # row per (project, qualified_name) today, but FINAL keeps s_vec correct if a future
+    # incremental path ever writes a bumped version without a full OPTIMIZE (INV-5 consistency).
+    # vec_cte_body has no trailing punctuation; the two WITH sites add their own separator.
+    vec_cte_body = (f"vec_top AS (SELECT qualified_name FROM chgraph.embeddings FINAL "
+                    f"WHERE project = {_q(project)} ORDER BY cosineDistance(vec, {qlit}) ASC "
+                    f"LIMIT {VEC_CANDIDATES})" if vec_on else "")
+    vec_top_cte = f"{vec_cte_body},\n        " if vec_on else ""   # chained ahead of `recency`
+    # arrayResize makes the vector always EMBED_DIM long so cosineDistance never sees mismatched
+    # sizes — ClickHouse's if() does NOT short-circuit it, so a LEFT-JOIN-missing empty vec would
+    # otherwise raise SIZES_OF_ARRAYS_DONT_MATCH. The if() still zeroes s_vec for those rows.
     vec_col = (f"round(if(length(e.vec) = {embeddings.EMBED_DIM}, "
-               f"1 - cosineDistance(e.vec, {qlit}), 0.0), 3)" if vec_on else "0.0")
-    vec_join = ("LEFT JOIN chgraph.embeddings AS e "
+               f"1 - cosineDistance(arrayResize(e.vec, {embeddings.EMBED_DIM}), {qlit}), 0.0), 3)"
+               if vec_on else "0.0")
+    vec_join = ("LEFT JOIN chgraph.embeddings AS e FINAL "
                 "ON n.qualified_name = e.qualified_name AND n.project = e.project" if vec_on else "")
 
     sql = f"""
@@ -165,7 +174,7 @@ def search_graph(store: Store, project: str, query: str | None = None,
     ORDER BY score DESC, qualified_name
     LIMIT {int(limit)} OFFSET {int(offset)}
     """
-    count_cte = f"WITH {vec_top_cte.rstrip(', \n')}\n" if vec_on else ""
+    count_cte = f"WITH {vec_cte_body}\n" if vec_on else ""
     count_sql = f"{count_cte}SELECT count() AS n FROM chgraph.nodes AS n FINAL WHERE {where}"
     rows = store.rows(sql)
     total = store.rows(count_sql)[0]["n"]
