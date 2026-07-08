@@ -7,3 +7,5 @@
 
 **Quality 100%** (6/6) · **1,226,058 tokens** (204,343/question)
 
+> **Graph adoption: 17%** of questions used a chgraph tool (2 calls). A quality delta on questions the graph never touched is agent variance, not chgraph.
+

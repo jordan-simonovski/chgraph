@@ -13,7 +13,9 @@
     "passed": 5,
     "quality": 0.8333333333333334,
     "tokens_total": 1215225,
-    "tokens_mean": 202537.5
+    "tokens_mean": 202537.5,
+    "graph_adoption": 0.0,
+    "graph_tool_calls": 0
   },
   "questions": [
     {

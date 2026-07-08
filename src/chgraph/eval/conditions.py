@@ -16,8 +16,11 @@ FILE_TOOLS = ["Read", "Glob", "Grep"]
 # setting_sources=[] (no host hooks/skills/plugins) this keeps A strictly file-only.
 NON_FILE_TOOLS = [
     "Bash", "BashOutput", "KillShell", "Write", "Edit", "NotebookEdit", "Task",
-    "WebFetch", "WebSearch", "TodoWrite", "ExitPlanMode", "ToolSearch",
+    "WebFetch", "WebSearch", "TodoWrite", "ExitPlanMode", "ToolSearch", "SlashCommand", "LS",
 ]
+# NOTE: this denylist is defence-in-depth, not the guarantee. The guarantee is the per-question
+# tool-leak check in runner.py (any tool outside the condition's allow-set -> recorded failure),
+# so a missing builtin here surfaces loudly instead of silently invalidating a run.
 
 # chgraph MCP query surface (read-only; index tools deliberately excluded —
 # the corpus is indexed before a run, the agent must not spend turns indexing).

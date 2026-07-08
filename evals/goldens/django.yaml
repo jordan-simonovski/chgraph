@@ -44,7 +44,7 @@
   key_points:
     - "it calls queryset.get(*args, **kwargs) to fetch the object (django/shortcuts.py)"
     - "it raises Http404 when the object does not exist"
-    - "it derives the queryset from the passed model/manager/queryset (get_queryset helper)"
+    - "it derives the queryset from the passed model/manager/queryset (_get_queryset helper)"
   golden_set_version: 1
   provenance: {by: claude, verified: false, date: 2026-07-08, why: "caller/callee: what a shortcut delegates to"}
 

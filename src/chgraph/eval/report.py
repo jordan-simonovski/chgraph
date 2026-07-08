@@ -22,6 +22,11 @@ def build_report(run_id: str, condition: str,
     n = len(pairs)
     passed = sum(1 for _, v in pairs if v.passed)
     tokens_total = sum(r.tokens_total for r, _ in pairs)
+    # graph adoption: on how many questions did the agent actually call a chgraph tool? A C run
+    # where the graph went unused proves nothing about chgraph — surface it so quality can't be
+    # misread as a graph win (VERIFIED-necessary: 2026-07-08 django C used the graph on 1/6).
+    graph_qs = sum(1 for r, _ in pairs if any("chgraph" in t for t in r.tool_calls))
+    graph_calls = sum(v for r, _ in pairs for t, v in r.tool_calls.items() if "chgraph" in t)
     questions, failures = [], []
     for r, v in pairs:
         questions.append({
@@ -49,6 +54,8 @@ def build_report(run_id: str, condition: str,
             "quality": (passed / n) if n else 0.0,
             "tokens_total": tokens_total,
             "tokens_mean": (tokens_total / n) if n else 0,
+            "graph_adoption": (graph_qs / n) if n else 0.0,   # frac of questions that used a chgraph tool
+            "graph_tool_calls": graph_calls,
         },
         "questions": questions,
         "failures": failures,
@@ -89,6 +96,12 @@ def render_markdown(report: dict) -> str:
         "",
         f"**Quality {s['quality']:.0%}** ({s['passed']}/{s['n']}) · "
         f"**{s['tokens_total']:,} tokens** ({s['tokens_mean']:,.0f}/question)",
+        "",
+        # condition C only: without graph usage a C-vs-A quality delta says nothing about chgraph
+        (f"> **Graph adoption: {s.get('graph_adoption', 0):.0%}** of questions used a chgraph "
+         f"tool ({s.get('graph_tool_calls', 0)} calls). A quality delta on questions the graph "
+         f"never touched is agent variance, not chgraph."
+         if report["condition"] == "C" else ""),
         "",
     ]
     if report["failures"]:

@@ -91,10 +91,10 @@ def _sdk_runner(prompt: str, options: dict) -> Any:
         tools: Counter = Counter()
         async for msg in query(prompt=prompt, options=ClaudeAgentOptions(**options)):
             for blk in getattr(msg, "content", None) or []:
-                if getattr(blk, "type", None) == "tool_use" or hasattr(blk, "name"):
-                    name = getattr(blk, "name", None)
-                    if name:
-                        tools[name] += 1
+                # only ToolUseBlock/ServerToolUseBlock carry `.name`; text/thinking/result blocks don't
+                name = getattr(blk, "name", None)
+                if name:
+                    tools[name] += 1
             if isinstance(msg, ResultMessage):
                 result = msg
         if result is None:
