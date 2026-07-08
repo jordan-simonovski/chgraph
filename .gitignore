@@ -5,3 +5,5 @@ __pycache__/
 
 # eval corpus checkouts (cloned on demand, pinned via evals/corpus.yaml)
 evals/.cache/
+
+.env
