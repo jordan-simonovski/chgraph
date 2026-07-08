@@ -116,6 +116,32 @@ The audit caught and fixed a real detector bug: `_has_deprecated_decorator` matc
 deprecated")` (which SUPPRESSES a warning) false-flagged 3 live test classes. Fixed to match the
 decorator's callable *name* (`deprecated`), never its arguments; regression test added.
 
+**Third-corpus audit — SQLAlchemy@12f32306** (VERIFIED 2026-07-08), added to stress precision on a
+codebase with a formal deprecation decorator and a legacy/modern API split:
+
+| repo | symbols | flagged | precision |
+|---|---|---|---|
+| sqlalchemy | 39,855 | 48 (0.12%) | 48/48 genuine — all `@util.deprecated`/`@deprecated`-decorated. `@util.deprecated_params`/`_cls` (param-level) correctly excluded by name-exact matching |
+
+Caught a **second** false-positive class: a `.. deprecated::` docstring *directive* is not a
+whole-symbol signal — SQLAlchemy's live `relationship`, `and_`, `or_` carry `.. deprecated::` blocks
+that describe a deprecated *parameter/calling-convention*. The docstring signal is **retired**
+(precision-first; recall cost is a symbol deprecated only via docstring, which is rare and soft).
+After the fix, flagged fell 69→48 and those three live symbols are no longer flagged.
+
+**Finding — the staleness benefit is gated by the lexical signal, not by deprecation.** On
+SQLAlchemy the demotion is *safe* (0 false positives) but its ranking *payoff is marginal*:
+canonical and twin symbols are buried by massive same-name collisions (`MetaData` matches ~100 lib
+symbols; the `noload`/`tuples` twins sit at ranks 3–17, not adjacent), so a −0.20 nudge moves the
+live symbol up only 1–2 ranks — nowhere near django's clean +0.112. This is the binary-lexical
+placeholder signal (search.py, INV-4) burying everything, not a deprecation-signal defect. The
+deprecation signal is never harmful; it pays off where the lexical pool is clean (django) and is
+approximately neutral where it is not (sqlalchemy). **Conclusion: precision generalizes across 3
+corpora (the flip's actual risk is retired); the staleness *magnitude* does not, and won't until
+the lexical signal is upgraded.** No clean SQLAlchemy staleness/general golden is authorable under
+the current methodology (both twins and canonicals rank far below #1 for lexical reasons), so the
+default-flip decision rests on: django's staleness win + 3-corpus clean precision + never-harmful.
+
 ## Rollback
 
 Reversible. Set/leave `CHGRAPH_RANK_DEPRECATION_WEIGHT=0.0` (or unset) → ranking is byte-for-byte

@@ -25,3 +25,10 @@ repos:
     language: python
     role: dev                 # small repo, fastest iteration
     source: "codegraph (Python 'Small')"
+
+  - name: sqlalchemy
+    repo: sqlalchemy/sqlalchemy
+    sha: 12f32306476d865fb8ceede0b43dbc88ba52ac46   # main @ 2026-07-07
+    language: python
+    role: staleness            # 3rd corpus for the deprecation-signal default-flip (ADR-0002):
+    source: "heavy @util.deprecated + .. deprecated:: use; legacy/modern API twins"

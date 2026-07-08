@@ -112,13 +112,13 @@ def decorated_old():
     return 2
 
 
-def docstring_old():
+def docstring_only(safe=None):
     """Do a thing.
 
     .. deprecated:: 4.2
-        Use thing2 instead.
+        The ``safe`` parameter is deprecated.
     """
-    return 3
+    return safe
 
 
 class DeprecatedClass(Base):
@@ -152,14 +152,15 @@ def _dep(nodes, qn):
 
 def test_deprecation_detected_only_for_whole_symbol():
     nodes, _ = parse_file("m.py", DEPREC_SRC)
-    # deprecated: unconditional warn, @deprecated decorator, .. deprecated:: docstring,
-    # class whose __init__ unconditionally warns
+    # deprecated: unconditional warn, @deprecated decorator, class whose __init__ warns
     assert _dep(nodes, "m.old_fn") is True
     assert _dep(nodes, "m.decorated_old") is True
-    assert _dep(nodes, "m.docstring_old") is True
     assert _dep(nodes, "m.DeprecatedClass") is True
     # NOT deprecated: guarded/param-level warn (JsonResponse/QuerySet false-positive class)
     assert _dep(nodes, "m.emits_warn_for_arg") is False
+    # NOT deprecated: a `.. deprecated::` docstring directive describes a deprecated PARAMETER,
+    # not the symbol — too ambiguous to flag (sqlalchemy relationship/and_/or_ carry these live)
+    assert _dep(nodes, "m.docstring_only") is False
     assert _dep(nodes, "m.LiveClass") is False
     assert _dep(nodes, "m.LiveClass.method") is False
     # NOT deprecated: a decorator that only MENTIONS "deprecated" in its args (django's
