@@ -1,6 +1,6 @@
 # 0002 — Deprecation-aware ranking: parse-time whole-symbol detection + flagged demotion signal
 
-- Status: Proposed
+- Status: Accepted (default hardened to -0.20 on 2026-07-08 after the 2-corpus staleness confirmation)
 - Date: 2026-07-08
 - Class: retrieval-affecting + index-integrity-affecting (parser). No schema-migration: the flag
   is stored in the existing `nodes.properties` JSON blob — no DDL.
@@ -66,11 +66,11 @@ a ranking signal behind a default-off flag.
 | Field | Value |
 |---|---|
 | Name | `chgraph_rank_deprecation_weight` (env `CHGRAPH_RANK_DEPRECATION_WEIGHT`) |
-| Default | `0.0` — current behavior; adding the flag changes no result by itself |
-| Label | `experimental` |
+| Default | `-0.20` — demote deprecated symbols (hardened 2026-07-08). Set `0.0` to disable. |
+| Label | `prod` |
 | Owner | git-evolution campaign |
-| Re-verification | `CHGRAPH_RANK_DEPRECATION_WEIGHT=-0.20 python -m chgraph.eval.rank_run` → both gates PASS |
-| Retirement | harden to a `-0.20` default once a second corpus (beyond django) confirms both gates; then this flag is removed |
+| Re-verification | `python -m chgraph.eval.rank_run` → both gates PASS; `CHGRAPH_RANK_DEPRECATION_WEIGHT=0.0 …` → no demotion |
+| Retirement | flag retained as a `0.0` escape hatch (not removed) — reversible disable |
 
 ## Verification
 
@@ -78,8 +78,10 @@ Detector on real django@318a316a (parse-time, VERIFIED 2026-07-08):
 `BitAnd`, `StringAgg` (stale twins) → deprecated=True; `JsonResponse`, `HttpResponseRedirect`,
 `QuerySet`, `EmailMultiAlternatives` (live) → False. The prior regex false positives are gone.
 
-Phase-6 eval gate on the real node property (`evals/runs/rank-2026-07-08.json`, VERIFIED
-2026-07-08), `dep=-0.20`, django@318a316a re-indexed with the new parser:
+Phase-6 eval gate on the real node property, `dep=-0.20`, django@318a316a re-indexed with the new
+parser — the **initial promotion run** (binary lexical, django only). SUPERSEDED by the combined
+run below; these numbers are a dated snapshot, not what `rank-2026-07-08.json` holds now (the
+date-keyed artifact records the latest same-day run):
 
 ```
 [staleness] n=4   blind=0.271  hybrid=0.271  hybrid+dep=0.383   gain +0.112  [bar >= +0.10] PASS
@@ -141,6 +143,24 @@ corpora (the flip's actual risk is retired); the staleness *magnitude* does not,
 the lexical signal is upgraded.** No clean SQLAlchemy staleness/general golden is authorable under
 the current methodology (both twins and canonicals rank far below #1 for lexical reasons), so the
 default-flip decision rests on: django's staleness win + 3-corpus clean precision + never-harmful.
+
+**Default hardened to −0.20 — 2-corpus staleness confirmation** (VERIFIED 2026-07-08, after
+ADR-0003's subtoken-Jaccard lexical landed). The lexical fix un-buried the SQLAlchemy twins,
+making them authorable goldens (`noload` live rank 2→1, `tuples` 3→1 under the demotion). Combined
+django+sqlalchemy ranking gate:
+
+```
+[staleness] n=6   blind=0.389  hybrid=0.389  hybrid+dep=0.750   gain +0.361  [bar >= +0.10] PASS
+[general]   n=13  blind=1.000  hybrid=1.000  hybrid+dep=1.000   reg  +0.000  [bar <= 0.02]  PASS
+```
+
+The staleness benefit generalizes across two corpora once lexical is fixed; precision is clean on
+three. The `chgraph_rank_deprecation_weight` default is flipped `0.0 → -0.20`; the flag remains as a
+`0.0` escape hatch. `rank-2026-07-08.json` holds this combined run (the same-day artifact is
+overwritten per run). **Cross-ADR coupling:** the sqlalchemy half of the staleness gain is
+contingent on ADR-0003's Jaccard lexical staying the default — under `CHGRAPH_RANK_LEXICAL=binary`
+the twins re-bury and only the django gain (~+0.11) remains. The `staleness_gain` gate therefore
+guards the dep weight AND the Jaccard default together.
 
 ## Rollback
 

@@ -2,13 +2,13 @@
   "k": 10,
   "slices": {
     "staleness": {
-      "n": 4,
-      "blind": 0.375,
-      "hybrid": 0.375,
-      "hybrid+dep": 0.625
+      "n": 6,
+      "blind": 0.38888888888888884,
+      "hybrid": 0.38888888888888884,
+      "hybrid+dep": 0.75
     },
     "general": {
-      "n": 10,
+      "n": 13,
       "blind": 1.0,
       "hybrid": 1.0,
       "hybrid+dep": 1.0
@@ -18,7 +18,8 @@
     "run_id": "rank-2026-07-08",
     "goldens_file": "evals/ranking_goldens.yaml",
     "corpus_shas": {
-      "django": "318a316a4c86a65bede68144f9546a6056d91379"
+      "django": "318a316a4c86a65bede68144f9546a6056d91379",
+      "sqlalchemy": "12f32306476d865fb8ceede0b43dbc88ba52ac46"
     },
     "configs": {
       "blind": {
@@ -42,7 +43,7 @@
     },
     "gates": {
       "staleness_gain": {
-        "value": 0.25,
+        "value": 0.36111111111111116,
         "bar": 0.1,
         "pass": true
       },

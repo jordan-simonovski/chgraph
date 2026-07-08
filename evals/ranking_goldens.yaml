@@ -1,15 +1,16 @@
 # Ranking-eval goldens (git-evolution campaign Phase 6). query -> expected live symbol.
-# STATUS: derived from django @318a316a; machine-verified 2026-07-08 against the live index
-# (each expected qn present; staleness pairs confirmed same-name live/deprecated collisions;
-# each general `dep-trap` confirmed flagged dep=1 yet correctly #1 under blind). verified:false
-# until human sign-off per validation-and-qa §4.
+# STATUS: django @318a316a + sqlalchemy @12f32306 (corpus.yaml); machine-verified 2026-07-08
+# against the live index (each expected qn present at limit=50; staleness pairs confirmed same-name
+# live/deprecated collisions; each general `dep-trap` confirmed flagged dep=1 yet #1 under blind;
+# sqlalchemy twins confirmed lifted to #1 by the dep demotion under the Jaccard lexical default).
+# verified:false until human sign-off per validation-and-qa §4.
 #
-# staleness (n=4): pool contains a stale near-duplicate of `expected`; recency alone can't
-#            separate them (deprecate+replace landed in one commit). Tests the flagship thesis.
-#            NOTE: the clean same-name twin family in django@318a316a is exactly the 4 postgres
-#            aggregates below (only `class X(_X)` deprecation shims) — the set is exhausted, not
-#            thin by neglect. More would need a different repo or a different staleness shape.
-# general (n=10): canonical symbol ranks #1 under blind, no staleness angle. Over-demotion guard.
+# staleness (n=6 — django 4 + sqlalchemy 2): pool contains a stale near-duplicate of `expected`;
+#            recency alone can't separate them (deprecate+replace landed in one commit). Flagship
+#            thesis. NOTE: django's clean same-name twin family is exactly the 4 postgres aggregates
+#            below (only `class X(_X)` shims); the sqlalchemy pair (noload/tuples) is the 2nd corpus.
+# general (n=13 — django 10 + sqlalchemy 3): canonical symbol ranks #1 under blind, no staleness
+#            angle. Over-demotion guard.
 #            The 6 `dep-trap` entries are LIVE symbols whose body carries a deprecation marker
 #            (they deprecate a param/method, not themselves) — the JsonResponse false-positive
 #            class. The coarse body-regex prototype mis-flagged them; the parse-time detector
@@ -29,10 +30,22 @@
 - {query: SimpleLazyObject,     expected: django.utils.functional.SimpleLazyObject,   repo: django, slice: general}
 
 # dep-trap: live symbol whose body carries a deprecation marker (deprecates a param/method,
-# not itself). Must stay #1 under hybrid+dep — regression guard for the -0.05 weight.
+# not itself). Must stay #1 under hybrid+dep — regression guard for the shipped dep weight (-0.20).
 - {query: JsonResponse,             expected: django.http.response.JsonResponse,            repo: django, slice: general}
 - {query: EmailMultiAlternatives,   expected: django.core.mail.message.EmailMultiAlternatives, repo: django, slice: general}
 - {query: AdminEmailHandler,        expected: django.utils.log.AdminEmailHandler,           repo: django, slice: general}
 - {query: LazySettings,             expected: django.conf.LazySettings,                     repo: django, slice: general}
 - {query: BasePaginator,            expected: django.core.paginator.BasePaginator,          repo: django, slice: general}
 - {query: Urlizer,                  expected: django.utils.html.Urlizer,                    repo: django, slice: general}
+
+# --- SQLAlchemy@12f32306 (2nd staleness corpus; requires subtoken-Jaccard lexical, ADR-0003) ---
+# Same-name live/deprecated twins where the live symbol is a public API and the stale twin is a
+# legacy method deprecated via @util.deprecated. Under the binary lexical placeholder these were
+# buried (live at rank 2-3 among same-name collisions); Jaccard surfaces them so the dep demotion
+# lifts the live one to #1 — the 2nd-corpus confirmation the staleness benefit generalizes.
+- {query: noload, expected: lib.sqlalchemy.orm.strategy_options.noload,     repo: sqlalchemy, slice: staleness}
+- {query: tuples, expected: lib.sqlalchemy.orm.query.RowReturningQuery.tuples, repo: sqlalchemy, slice: staleness}
+# general: canonical public symbols, no stale twin — over-demotion guard on a 2nd corpus.
+- {query: MetaData,      expected: lib.sqlalchemy.sql.schema.MetaData,        repo: sqlalchemy, slice: general}
+- {query: Session,       expected: lib.sqlalchemy.orm.session.Session,        repo: sqlalchemy, slice: general}
+- {query: create_engine, expected: lib.sqlalchemy.engine.create.create_engine, repo: sqlalchemy, slice: general}
