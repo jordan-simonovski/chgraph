@@ -28,6 +28,7 @@ def build_report(run_id: str, condition: str,
             "golden_id": r.golden_id, "passed": v.passed, "score": v.score,
             "tokens": r.tokens_total, "tokens_raw": r.tokens_raw,
             "num_turns": r.num_turns, "is_error": r.is_error, "notes": v.notes,
+            "tool_calls": r.tool_calls,   # which tools the agent used (verify A=file-only, C uses graph)
         })
         if r.is_error or not v.passed:
             failures.append({

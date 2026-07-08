@@ -22,10 +22,17 @@ def run_eval(goldens: list[Golden], condition: str,
     pairs: list[tuple[AnswerResult, Verdict]] = []
     for g in goldens:
         repo = corpus[g.repo]
-        res = run_question(g, condition=condition, checkout=checkout_for(g.repo),
-                           model=model, corpus_sha=repo.sha, chgraph_cmd=chgraph_cmd,
-                           reference_cmd=reference_cmd, max_budget_usd=max_budget_usd,
-                           runner=agent_runner)
+        try:
+            res = run_question(g, condition=condition, checkout=checkout_for(g.repo),
+                               model=model, corpus_sha=repo.sha, chgraph_cmd=chgraph_cmd,
+                               reference_cmd=reference_cmd, max_budget_usd=max_budget_usd,
+                               runner=agent_runner)
+        except Exception as e:                          # noqa: BLE001 — one bad question must not
+            # abort the whole run. The SDK RAISES on some agent errors (budget ceiling, CLI
+            # failure) instead of returning is_error=True, so map that to a recorded failure.
+            res = AnswerResult(golden_id=g.id, condition=condition, corpus_sha=repo.sha,
+                               answer=f"agent error: {e}", tokens_total=0, num_turns=0,
+                               is_error=True)
         if res.is_error:
             verdict = Verdict(passed=False, score=0.0,
                               covered=[False] * len(g.key_points), notes="agent error")

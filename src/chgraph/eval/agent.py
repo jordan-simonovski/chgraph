@@ -36,6 +36,7 @@ class AnswerResult:
     num_turns: int
     is_error: bool = False
     tokens_raw: dict = field(default_factory=dict)
+    tool_calls: dict = field(default_factory=dict)   # tool name -> call count (which surface the agent used)
 
 
 class _ResultLike(Protocol):
@@ -62,22 +63,42 @@ def run_question(golden: Golden, condition: str, checkout: str, model: str,
         golden_id=golden.id, condition=condition, corpus_sha=corpus_sha,
         answer=r.result or "", tokens_total=total_tokens(r.usage),
         num_turns=r.num_turns, is_error=r.is_error, tokens_raw=r.usage or {},
+        tool_calls=dict(getattr(r, "tool_calls", {}) or {}),
     )
 
 
+class _RunnerResult:
+    """Carries the ResultMessage fields plus the per-tool call counts, so the harness can
+    VERIFY which tool surface the agent used (condition A must be file-only; condition C must
+    actually reach for mcp__chgraph__*)."""
+    def __init__(self, rm: Any, tool_calls: dict):
+        self.result = rm.result
+        self.usage = rm.usage
+        self.num_turns = rm.num_turns
+        self.is_error = rm.is_error
+        self.tool_calls = tool_calls
+
+
 def _sdk_runner(prompt: str, options: dict) -> Any:
-    """Default runner: drive the Claude Agent SDK and return its ResultMessage.
+    """Default runner: drive the Claude Agent SDK, tallying tool_use blocks along the way.
     Imported lazily so importing this module needs neither the SDK nor the CLI."""
     import anyio
+    from collections import Counter
     from claude_agent_sdk import ClaudeAgentOptions, query, ResultMessage
 
     async def _go():
         result = None
+        tools: Counter = Counter()
         async for msg in query(prompt=prompt, options=ClaudeAgentOptions(**options)):
+            for blk in getattr(msg, "content", None) or []:
+                if getattr(blk, "type", None) == "tool_use" or hasattr(blk, "name"):
+                    name = getattr(blk, "name", None)
+                    if name:
+                        tools[name] += 1
             if isinstance(msg, ResultMessage):
                 result = msg
         if result is None:
             raise RuntimeError("agent produced no ResultMessage")
-        return result
+        return _RunnerResult(result, dict(tools))
 
     return anyio.run(_go)

@@ -9,6 +9,16 @@ from __future__ import annotations
 
 FILE_TOOLS = ["Read", "Glob", "Grep"]
 
+# Hard-blocked in every condition so the agent can't escape the file/graph tool surface into a
+# shell (grep/find via Bash) or mutate the checkout. disallowed_tools is enforced even under
+# bypassPermissions — allowed_tools alone is only a permission allowlist, not a filter (VERIFIED
+# 2026-07-08: the agent used Bash despite allowed_tools omitting it). Combined with
+# setting_sources=[] (no host hooks/skills/plugins) this keeps A strictly file-only.
+NON_FILE_TOOLS = [
+    "Bash", "BashOutput", "KillShell", "Write", "Edit", "NotebookEdit", "Task",
+    "WebFetch", "WebSearch", "TodoWrite", "ExitPlanMode", "ToolSearch",
+]
+
 # chgraph MCP query surface (read-only; index tools deliberately excluded —
 # the corpus is indexed before a run, the agent must not spend turns indexing).
 CHGRAPH_TOOLS = [
@@ -37,6 +47,12 @@ def agent_options(condition: str, checkout: str, model: str,
         cwd=checkout, model=model, system_prompt=SYSTEM_PROMPT,
         max_turns=MAX_TURNS, permission_mode="bypassPermissions",
         mcp_servers={}, allowed_tools=list(FILE_TOOLS),
+        disallowed_tools=list(NON_FILE_TOOLS),
+        # ISOLATION (VERIFIED-necessary 2026-07-08): without these the SDK agent inherits the
+        # host's ~/.claude — user SessionStart hooks fire inside the eval agent (observed:
+        # "PONYTAIL MODE"/superpowers injected), plugin tools load, and the host .mcp.json is read.
+        setting_sources=[],           # load NO filesystem settings: no host hooks/skills/plugins
+        strict_mcp_config=True,       # only the mcp_servers below; ignore the repo/user .mcp.json
     )
     if max_budget_usd is not None:
         base["max_budget_usd"] = max_budget_usd  # hard per-question spend ceiling

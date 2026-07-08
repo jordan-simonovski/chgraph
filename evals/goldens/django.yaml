@@ -1,0 +1,70 @@
+# Django answer-quality goldens for the A-vs-C head-to-head (validation-and-qa §2/§4).
+# STATUS: machine-verified against django@318a316a (each key point confirmed in the cited file
+# 2026-07-08); verified: false until human sign-off (§4). Chosen to be cross-file / semantic —
+# where a 46k-symbol repo makes plain file exploration (condition A) expensive and the graph +
+# vector signals (condition C) should help. All six are answerable by BOTH conditions (no
+# evolution/chgraph-only questions here, to keep the A/C quality comparison fair).
+
+- id: arch-django-http-hierarchy
+  question: "Describe Django's HttpResponse class hierarchy: what is the base class and how do JsonResponse and HttpResponseRedirect fit in?"
+  repo: django
+  category: architecture
+  key_points:
+    - "HttpResponseBase is the root base class (django/http/response.py)"
+    - "HttpResponse and StreamingHttpResponse both subclass HttpResponseBase"
+    - "JsonResponse subclasses HttpResponse"
+    - "HttpResponseRedirect subclasses HttpResponseRedirectBase, which subclasses HttpResponse"
+  golden_set_version: 1
+  provenance: {by: claude, verified: false, date: 2026-07-08, why: "architecture: cross-symbol hierarchy in one module"}
+
+- id: symlookup-django-reverse
+  question: "Which function generates a URL from a view name and arguments, and where is it defined?"
+  repo: django
+  category: symbol_lookup
+  key_points:
+    - "reverse() is the function (django/urls/base.py)"
+    - "it resolves a view name (or callable) plus args/kwargs into a URL path"
+  golden_set_version: 1
+  provenance: {by: claude, verified: false, date: 2026-07-08, why: "semantic lookup: query words don't match the symbol name 'reverse'"}
+
+- id: symlookup-django-authenticate
+  question: "Where does Django verify a user's credentials during login, and what is the entry function?"
+  repo: django
+  category: symbol_lookup
+  key_points:
+    - "authenticate() is the entry point (django/contrib/auth/__init__.py)"
+    - "it tries each configured authentication backend and returns a user or None"
+  golden_set_version: 1
+  provenance: {by: claude, verified: false, date: 2026-07-08, why: "semantic lookup: 'verify credentials' vs symbol 'authenticate'"}
+
+- id: callercallee-django-get-object-or-404
+  question: "How does django.shortcuts.get_object_or_404 perform its lookup and signal a missing object?"
+  repo: django
+  category: caller_callee
+  key_points:
+    - "it calls queryset.get(*args, **kwargs) to fetch the object (django/shortcuts.py)"
+    - "it raises Http404 when the object does not exist"
+    - "it derives the queryset from the passed model/manager/queryset (get_queryset helper)"
+  golden_set_version: 1
+  provenance: {by: claude, verified: false, date: 2026-07-08, why: "caller/callee: what a shortcut delegates to"}
+
+- id: dataflow-django-middleware-chain
+  question: "How does Django assemble and apply its middleware to an incoming request?"
+  repo: django
+  category: data_flow
+  key_points:
+    - "BaseHandler.load_middleware builds the chain (django/core/handlers/base.py)"
+    - "each middleware is wrapped with convert_exception_to_response and stored as _middleware_chain"
+    - "get_response calls self._middleware_chain(request) to run the request through the stack"
+  golden_set_version: 1
+  provenance: {by: claude, verified: false, date: 2026-07-08, why: "cross-file data flow: request path through middleware"}
+
+- id: arch-django-atomic
+  question: "What does django.db.transaction.atomic return, and what makes it usable as both a decorator and a context manager?"
+  repo: django
+  category: architecture
+  key_points:
+    - "atomic() returns an Atomic instance (django/db/transaction.py)"
+    - "Atomic subclasses ContextDecorator, which is what lets it work as both a decorator and a context manager"
+  golden_set_version: 1
+  provenance: {by: claude, verified: false, date: 2026-07-08, why: "architecture: dual-use construct + base class"}
