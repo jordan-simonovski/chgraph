@@ -36,3 +36,15 @@
 - {query: LazySettings,             expected: django.conf.LazySettings,                     repo: django, slice: general}
 - {query: BasePaginator,            expected: django.core.paginator.BasePaginator,          repo: django, slice: general}
 - {query: Urlizer,                  expected: django.utils.html.Urlizer,                    repo: django, slice: general}
+
+# --- SQLAlchemy@12f32306 (2nd staleness corpus; requires subtoken-Jaccard lexical, ADR-0003) ---
+# Same-name live/deprecated twins where the live symbol is a public API and the stale twin is a
+# legacy method deprecated via @util.deprecated. Under the binary lexical placeholder these were
+# buried (live at rank 2-3 among same-name collisions); Jaccard surfaces them so the dep demotion
+# lifts the live one to #1 — the 2nd-corpus confirmation the staleness benefit generalizes.
+- {query: noload, expected: lib.sqlalchemy.orm.strategy_options.noload,     repo: sqlalchemy, slice: staleness}
+- {query: tuples, expected: lib.sqlalchemy.orm.query.RowReturningQuery.tuples, repo: sqlalchemy, slice: staleness}
+# general: canonical public symbols, no stale twin — over-demotion guard on a 2nd corpus.
+- {query: MetaData,      expected: lib.sqlalchemy.sql.schema.MetaData,        repo: sqlalchemy, slice: general}
+- {query: Session,       expected: lib.sqlalchemy.orm.session.Session,        repo: sqlalchemy, slice: general}
+- {query: create_engine, expected: lib.sqlalchemy.engine.create.create_engine, repo: sqlalchemy, slice: general}

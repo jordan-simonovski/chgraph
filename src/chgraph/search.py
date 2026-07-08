@@ -42,17 +42,17 @@ def _dep_weight() -> float:
     """Weight applied to the parse-time `deprecated` node property in the hybrid score.
 
     Flag: chgraph_rank_deprecation_weight (env CHGRAPH_RANK_DEPRECATION_WEIGHT)
-    Default: 0.0 — current behavior; adding this flag changes no query result by itself.
-    Label: experimental. Owner: git-evolution campaign.
-    Validated: eval run rank-2026-07-08 (staleness +0.112, general reg 0.000) at -0.05 on the
-      body-regex prototype; the parse-time detector is at least as clean (no false positives).
-    Re-verify: CHGRAPH_RANK_DEPRECATION_WEIGHT=-0.05 python -m chgraph.eval.rank_run
-    Retire: harden to a -0.05 default once a second corpus confirms (campaign Phase-6 step-4).
+    Default: -0.20 — demote deprecated symbols (ADR-0002, hardened after the 2-corpus staleness
+      confirmation). Set to 0.0 to disable.
+    Label: prod. Owner: git-evolution campaign.
+    Validated (run rank-2026-07-08, subtoken-Jaccard lexical): combined django+sqlalchemy
+      staleness gain +0.361, general regression 0.000; precision 3-corpus clean (0 false positives).
+    Re-verify: python -m chgraph.eval.rank_run ; CHGRAPH_RANK_DEPRECATION_WEIGHT=0.0 python -m chgraph.eval.rank_run
     """
     try:
-        return float(os.environ.get("CHGRAPH_RANK_DEPRECATION_WEIGHT", "0.0"))
+        return float(os.environ.get("CHGRAPH_RANK_DEPRECATION_WEIGHT", "-0.20"))
     except ValueError:
-        return 0.0
+        return -0.20
 
 
 def _lex_expr(query: str | None) -> str:
