@@ -1,0 +1,287 @@
+{
+  "run_id": "run-2026-07-08-C-django-n3-r3",
+  "condition": "C",
+  "scaffold_model": "claude-haiku-4-5-20251001",
+  "judge_model": "claude-opus-4-8",
+  "rubric_version": "1",
+  "golden_set_version": 1,
+  "corpus": {
+    "django": "318a316a4c86a65bede68144f9546a6056d91379"
+  },
+  "summary": {
+    "n": 6,
+    "passed": 6,
+    "quality": 1.0,
+    "tokens_total": 1028098,
+    "tokens_mean": 171349.66666666666,
+    "graph_adoption": 0.16666666666666666,
+    "graph_tool_calls": 3
+  },
+  "questions": [
+    {
+      "golden_id": "arch-django-http-hierarchy",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 168005,
+      "tokens_raw": {
+        "input_tokens": 50,
+        "cache_creation_input_tokens": 14851,
+        "cache_read_input_tokens": 151270,
+        "output_tokens": 1834,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 14851
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 8,
+            "output_tokens": 1051,
+            "cache_read_input_tokens": 31733,
+            "cache_creation_input_tokens": 3450,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 3450,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "num_turns": 6,
+      "is_error": false,
+      "notes": "All key points covered with correct hierarchy.",
+      "tool_calls": {
+        "Glob": 1,
+        "Grep": 1,
+        "Read": 3
+      }
+    },
+    {
+      "golden_id": "symlookup-django-reverse",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 151960,
+      "tokens_raw": {
+        "input_tokens": 50,
+        "cache_creation_input_tokens": 6954,
+        "cache_read_input_tokens": 143871,
+        "output_tokens": 1085,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 6954
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 8,
+            "output_tokens": 279,
+            "cache_read_input_tokens": 26304,
+            "cache_creation_input_tokens": 991,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 991,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "num_turns": 6,
+      "is_error": false,
+      "notes": "Both key points covered correctly.",
+      "tool_calls": {
+        "Grep": 1,
+        "Read": 1,
+        "mcp__chgraph__search_graph": 2,
+        "mcp__chgraph__get_code_snippet": 1
+      }
+    },
+    {
+      "golden_id": "symlookup-django-authenticate",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 136173,
+      "tokens_raw": {
+        "input_tokens": 42,
+        "cache_creation_input_tokens": 15542,
+        "cache_read_input_tokens": 118757,
+        "output_tokens": 1832,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 15542
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 8,
+            "output_tokens": 947,
+            "cache_read_input_tokens": 26454,
+            "cache_creation_input_tokens": 9429,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 9429,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "num_turns": 9,
+      "is_error": false,
+      "notes": "Both key points covered: authenticate() entry in __init__.py and iterating backends returning user or None.",
+      "tool_calls": {
+        "Grep": 2,
+        "Glob": 2,
+        "Read": 4
+      }
+    },
+    {
+      "golden_id": "callercallee-django-get-object-or-404",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 123979,
+      "tokens_raw": {
+        "input_tokens": 42,
+        "cache_creation_input_tokens": 4999,
+        "cache_read_input_tokens": 117682,
+        "output_tokens": 1256,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 4999
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 8,
+            "output_tokens": 813,
+            "cache_read_input_tokens": 24583,
+            "cache_creation_input_tokens": 2558,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 2558,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "num_turns": 5,
+      "is_error": false,
+      "notes": "All three key points covered: get() call, Http404 on missing, and _get_queryset helper.",
+      "tool_calls": {
+        "Glob": 2,
+        "Read": 2
+      }
+    },
+    {
+      "golden_id": "dataflow-django-middleware-chain",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 292688,
+      "tokens_raw": {
+        "input_tokens": 82,
+        "cache_creation_input_tokens": 15527,
+        "cache_read_input_tokens": 274640,
+        "output_tokens": 2439,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 15527
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 8,
+            "output_tokens": 1233,
+            "cache_read_input_tokens": 35636,
+            "cache_creation_input_tokens": 2033,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 2033,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "num_turns": 10,
+      "is_error": false,
+      "notes": "All three key points covered: load_middleware in base.py builds chain, convert_exception_to_response wrapping stored as _middleware_chain, and get_response calling self._middleware_chain(request).",
+      "tool_calls": {
+        "Glob": 1,
+        "Grep": 1,
+        "Read": 7
+      }
+    },
+    {
+      "golden_id": "arch-django-atomic",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 155293,
+      "tokens_raw": {
+        "input_tokens": 50,
+        "cache_creation_input_tokens": 7803,
+        "cache_read_input_tokens": 146088,
+        "output_tokens": 1352,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 7803
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 8,
+            "output_tokens": 776,
+            "cache_read_input_tokens": 25979,
+            "cache_creation_input_tokens": 3966,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 3966,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "num_turns": 6,
+      "is_error": false,
+      "notes": "Both key points covered: returns Atomic instance and subclasses ContextDecorator.",
+      "tool_calls": {
+        "Grep": 1,
+        "Glob": 2,
+        "Read": 2
+      }
+    }
+  ],
+  "failures": []
+}

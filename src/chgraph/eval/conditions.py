@@ -35,7 +35,15 @@ SYSTEM_PROMPT = (
     "You are a software engineer answering a question about the codebase in the "
     "current working directory. Investigate using only the tools available to you, "
     "then give a concise, concrete answer that names the specific files, symbols, "
-    "and relationships involved. Do not modify any files."
+    "and relationships involved. Do not modify any files. "
+    # Fair across conditions: identical prompt for A and C. Condition A has no graph tools so
+    # this clause is inert there; C is made aware the tools exist (otherwise the agent defaults
+    # to grep and never queries the graph). Deliberately NEUTRAL: it states the tools exist and
+    # what they do, and makes no claim they are faster/better — asserting the graph's value in
+    # the measurement instrument would confound any future positive C result (placebo/demand).
+    "If code-graph tools are available (e.g. search_graph, trace_path, get_code_snippet), you "
+    "may use them for locating symbols and tracing call/definition relationships, alongside "
+    "reading files. Use whichever tools you judge best for the question."
 )
 
 # ponytail: max_turns/budget caps live here so a runaway agent can't burn the run.

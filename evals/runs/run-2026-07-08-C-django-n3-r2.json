@@ -1,0 +1,262 @@
+{
+  "run_id": "run-2026-07-08-C-django-n3-r2",
+  "condition": "C",
+  "scaffold_model": "claude-haiku-4-5-20251001",
+  "judge_model": "claude-opus-4-8",
+  "rubric_version": "1",
+  "golden_set_version": 1,
+  "corpus": {
+    "django": "318a316a4c86a65bede68144f9546a6056d91379"
+  },
+  "summary": {
+    "n": 6,
+    "passed": 4,
+    "quality": 0.6666666666666666,
+    "tokens_total": 1091710,
+    "tokens_mean": 181951.66666666666,
+    "graph_adoption": 0.16666666666666666,
+    "graph_tool_calls": 3
+  },
+  "questions": [
+    {
+      "golden_id": "arch-django-http-hierarchy",
+      "passed": false,
+      "score": 0.75,
+      "tokens": 216163,
+      "tokens_raw": {
+        "input_tokens": 66,
+        "cache_creation_input_tokens": 11693,
+        "cache_read_input_tokens": 202653,
+        "output_tokens": 1751,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 11693
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 8,
+            "output_tokens": 757,
+            "cache_read_input_tokens": 31333,
+            "cache_creation_input_tokens": 692,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 692,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "num_turns": 8,
+      "is_error": false,
+      "notes": "Missing that StreamingHttpResponse subclasses HttpResponseBase; only shows HttpResponse.",
+      "tool_calls": {
+        "Grep": 1,
+        "Read": 5,
+        "Glob": 1
+      }
+    },
+    {
+      "golden_id": "symlookup-django-reverse",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 137566,
+      "tokens_raw": {
+        "input_tokens": 42,
+        "cache_creation_input_tokens": 9698,
+        "cache_read_input_tokens": 126923,
+        "output_tokens": 903,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 9698
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 8,
+            "output_tokens": 287,
+            "cache_read_input_tokens": 29069,
+            "cache_creation_input_tokens": 970,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 970,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "num_turns": 5,
+      "is_error": false,
+      "notes": "Both key points covered: reverse() in django/urls/base.py, and resolves viewname+args/kwargs to URL path.",
+      "tool_calls": {
+        "Grep": 1,
+        "mcp__chgraph__search_graph": 2,
+        "mcp__chgraph__get_code_snippet": 1
+      }
+    },
+    {
+      "golden_id": "symlookup-django-authenticate",
+      "passed": false,
+      "score": 0.0,
+      "tokens": 0,
+      "tokens_raw": {},
+      "num_turns": 0,
+      "is_error": true,
+      "notes": "agent error",
+      "tool_calls": {}
+    },
+    {
+      "golden_id": "callercallee-django-get-object-or-404",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 272290,
+      "tokens_raw": {
+        "input_tokens": 82,
+        "cache_creation_input_tokens": 10055,
+        "cache_read_input_tokens": 260160,
+        "output_tokens": 1993,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 10055
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 8,
+            "output_tokens": 637,
+            "cache_read_input_tokens": 29994,
+            "cache_creation_input_tokens": 397,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 397,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "num_turns": 10,
+      "is_error": false,
+      "notes": "All three key points covered: queryset.get call, Http404 on missing, _get_queryset from model/manager/queryset.",
+      "tool_calls": {
+        "Grep": 4,
+        "Read": 4,
+        "Glob": 1
+      }
+    },
+    {
+      "golden_id": "dataflow-django-middleware-chain",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 334963,
+      "tokens_raw": {
+        "input_tokens": 90,
+        "cache_creation_input_tokens": 18701,
+        "cache_read_input_tokens": 313414,
+        "output_tokens": 2758,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 18701
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 8,
+            "output_tokens": 1353,
+            "cache_read_input_tokens": 37097,
+            "cache_creation_input_tokens": 1949,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 1949,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "num_turns": 11,
+      "is_error": false,
+      "notes": "All three key points covered: load_middleware in base.py, convert_exception_to_response wrapping stored as _middleware_chain, and get_response calling _middleware_chain(request).",
+      "tool_calls": {
+        "Glob": 2,
+        "Grep": 2,
+        "Read": 6
+      }
+    },
+    {
+      "golden_id": "arch-django-atomic",
+      "passed": true,
+      "score": 1.0,
+      "tokens": 130728,
+      "tokens_raw": {
+        "input_tokens": 42,
+        "cache_creation_input_tokens": 9549,
+        "cache_read_input_tokens": 119851,
+        "output_tokens": 1286,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 9549
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 8,
+            "output_tokens": 715,
+            "cache_read_input_tokens": 25912,
+            "cache_creation_input_tokens": 3970,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 3970,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "num_turns": 5,
+      "is_error": false,
+      "notes": "Both key points covered: returns Atomic instance, subclasses ContextDecorator.",
+      "tool_calls": {
+        "Glob": 2,
+        "Read": 2
+      }
+    }
+  ],
+  "failures": [
+    {
+      "golden_id": "arch-django-http-hierarchy",
+      "reason": "judge_fail"
+    },
+    {
+      "golden_id": "symlookup-django-authenticate",
+      "reason": "agent_error"
+    }
+  ]
+}
