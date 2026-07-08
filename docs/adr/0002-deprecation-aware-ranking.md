@@ -78,8 +78,10 @@ Detector on real django@318a316a (parse-time, VERIFIED 2026-07-08):
 `BitAnd`, `StringAgg` (stale twins) → deprecated=True; `JsonResponse`, `HttpResponseRedirect`,
 `QuerySet`, `EmailMultiAlternatives` (live) → False. The prior regex false positives are gone.
 
-Phase-6 eval gate on the real node property (`evals/runs/rank-2026-07-08.json`, VERIFIED
-2026-07-08), `dep=-0.20`, django@318a316a re-indexed with the new parser:
+Phase-6 eval gate on the real node property, `dep=-0.20`, django@318a316a re-indexed with the new
+parser — the **initial promotion run** (binary lexical, django only). SUPERSEDED by the combined
+run below; these numbers are a dated snapshot, not what `rank-2026-07-08.json` holds now (the
+date-keyed artifact records the latest same-day run):
 
 ```
 [staleness] n=4   blind=0.271  hybrid=0.271  hybrid+dep=0.383   gain +0.112  [bar >= +0.10] PASS
@@ -154,7 +156,11 @@ django+sqlalchemy ranking gate:
 
 The staleness benefit generalizes across two corpora once lexical is fixed; precision is clean on
 three. The `chgraph_rank_deprecation_weight` default is flipped `0.0 → -0.20`; the flag remains as a
-`0.0` escape hatch.
+`0.0` escape hatch. `rank-2026-07-08.json` holds this combined run (the same-day artifact is
+overwritten per run). **Cross-ADR coupling:** the sqlalchemy half of the staleness gain is
+contingent on ADR-0003's Jaccard lexical staying the default — under `CHGRAPH_RANK_LEXICAL=binary`
+the twins re-bury and only the django gain (~+0.11) remains. The `staleness_gain` gate therefore
+guards the dep weight AND the Jaccard default together.
 
 ## Rollback
 
