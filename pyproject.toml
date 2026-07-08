@@ -18,6 +18,9 @@ eval = [
     "claude-agent-sdk>=0.2.110",
     "pyyaml>=6.0.3",
 ]
+# Optional vector signal (ADR-0004). fastembed = ONNX (no torch), CPU, no API key.
+# Core chgraph runs without it; the indexer skips embeddings and the vector signal stays inert.
+embeddings = ["fastembed>=0.7"]
 
 [project.scripts]
 chgraph = "chgraph.cli:main"

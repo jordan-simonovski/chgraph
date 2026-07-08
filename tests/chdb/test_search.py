@@ -113,3 +113,34 @@ def test_jaccard_lexical_ranks_exact_above_partial(store, monkeypatch):
     monkeypatch.setenv("CHGRAPH_RANK_LEXICAL", "binary")
     items = {i["qualified_name"]: i for i in search_graph(store, "p", query="MetaData").items}
     assert items["a.MetaData"]["lex"] == items["b.MetaDataFactoryBuilder"]["lex"] == 1.0
+
+
+def _insert_embedding(store, qn, vec):
+    lit = "[" + ",".join(str(x) for x in vec) + "]"
+    store.exec("INSERT INTO chgraph.embeddings (project, qualified_name, vec, version) "
+               f"VALUES ('p', '{qn}', {lit}, 1)")
+
+
+def test_vector_signal_surfaces_non_lexical_match(store, monkeypatch):
+    from chgraph import embeddings, search
+    # two symbols; the query lexically matches NEITHER name
+    _insert_node(store, "pkg.render", "render")
+    _insert_node(store, "pkg.template", "template")
+    e_render = [1.0] + [0.0] * (embeddings.EMBED_DIM - 1)
+    e_template = [0.0, 1.0] + [0.0] * (embeddings.EMBED_DIM - 2)
+    _insert_embedding(store, "pkg.render", e_render)
+    _insert_embedding(store, "pkg.template", e_template)
+    # stub the model: query embeds close to render, far from template
+    monkeypatch.setattr(embeddings, "available", lambda: True)
+    monkeypatch.setattr(embeddings, "embed_query", lambda q: e_render)
+    monkeypatch.setenv("CHGRAPH_RANK_VECTOR", "on")
+
+    items = search_graph(store, "p", query="draw output to the page").items
+    qns = [i["qualified_name"] for i in items]
+    assert "pkg.render" in qns                      # pulled in by vector despite zero lexical match
+    top = items[0]
+    assert top["qualified_name"] == "pkg.render" and top["vec"] == 1.0
+
+    # flag off -> no lexical match -> the vector candidate is gone
+    monkeypatch.setenv("CHGRAPH_RANK_VECTOR", "off")
+    assert search_graph(store, "p", query="draw output to the page").items == []

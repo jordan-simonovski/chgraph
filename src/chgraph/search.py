@@ -7,8 +7,11 @@ import os
 import re
 from dataclasses import dataclass
 
+from chgraph import embeddings
 from chgraph.evolution import DEFAULT_HALF_LIFE_DAYS, _q
 from chgraph.store import Store
+
+VEC_CANDIDATES = 100   # how many nearest-neighbour symbols the vector path adds to the pool
 
 W = {"lex": 0.35, "vec": 0.30, "rec": 0.20, "cen": 0.15}  # one code home; doc home: campaign Phase 5
 
@@ -36,6 +39,17 @@ def _lexical_mode() -> str:
     """
     mode = os.environ.get("CHGRAPH_RANK_LEXICAL", "jaccard").lower()
     return mode if mode in ("jaccard", "binary") else "jaccard"
+
+
+def _vector_on(store: Store, project: str, query: str | None) -> bool:
+    """Vector signal active? Needs a text query, fastembed installed (flag on), and this
+    project actually embedded. Flag: CHGRAPH_RANK_VECTOR = on|off (default on)."""
+    if not query or os.environ.get("CHGRAPH_RANK_VECTOR", "on").lower() == "off":
+        return False
+    if not embeddings.available():
+        return False
+    return bool(store.rows(
+        f"SELECT 1 FROM chgraph.embeddings WHERE project = {_q(project)} LIMIT 1"))
 
 
 def _dep_weight() -> float:
@@ -89,10 +103,20 @@ def search_graph(store: Store, project: str, query: str | None = None,
     if not (query or name_pattern or label):
         raise ValueError("search_graph needs at least one of: query, name_pattern, label")
 
+    vec_on = _vector_on(store, project, query)
+    qlit = ""                          # query-embedding literal, reused by the CTE, join, and score
+    if vec_on:
+        qlit = "[" + ",".join(str(x) for x in embeddings.embed_query(query)) + "]::Array(Float32)"
+
     conds = [f"n.project = {_q(project)}"]
     if query:
-        conds.append(f"(positionCaseInsensitive(n.name, {_q(query)}) > 0"
-                     f" OR positionCaseInsensitive(n.qualified_name, {_q(query)}) > 0)")
+        lex_match = (f"positionCaseInsensitive(n.name, {_q(query)}) > 0"
+                     f" OR positionCaseInsensitive(n.qualified_name, {_q(query)}) > 0")
+        # vector path widens the candidate set to nearest-neighbour symbols the query never
+        # lexically matches — that is the whole point of the vector signal.
+        if vec_on:
+            lex_match += " OR n.qualified_name IN (SELECT qualified_name FROM vec_top)"
+        conds.append(f"({lex_match})")
     if name_pattern:
         conds.append(f"match(n.name, {_q(name_pattern)})")
     if label:
@@ -101,9 +125,17 @@ def search_graph(store: Store, project: str, query: str | None = None,
     lex_expr = _lex_expr(query)
     w_dep = _dep_weight()
 
+    vec_top_cte = (f"vec_top AS (SELECT qualified_name FROM chgraph.embeddings "
+                   f"WHERE project = {_q(project)} ORDER BY cosineDistance(vec, {qlit}) ASC "
+                   f"LIMIT {VEC_CANDIDATES}),\n" if vec_on else "")
+    vec_col = (f"round(if(length(e.vec) = {embeddings.EMBED_DIM}, "
+               f"1 - cosineDistance(e.vec, {qlit}), 0.0), 3)" if vec_on else "0.0")
+    vec_join = ("LEFT JOIN chgraph.embeddings AS e "
+                "ON n.qualified_name = e.qualified_name AND n.project = e.project" if vec_on else "")
+
     sql = f"""
     WITH
-        recency AS (
+        {vec_top_cte}recency AS (
             SELECT path,
                    exp(-log(2) / {float(DEFAULT_HALF_LIFE_DAYS)} *
                        dateDiff('day', max(committed_at), now())) AS r
@@ -119,21 +151,22 @@ def search_graph(store: Store, project: str, query: str | None = None,
         n.qualified_name AS qualified_name, n.label AS label, n.name AS name,
         n.file_path AS file_path, n.start_line AS start_line, n.end_line AS end_line,
         round({lex_expr}, 3)                                    AS lex,
+        {vec_col}                                               AS vec,
         round(coalesce(r.r, 0), 3)                              AS rec,
         round(coalesce(d.deg, 0) / (SELECT m FROM maxdeg), 3)   AS cen,
         toUInt8(JSONExtractBool(n.properties, 'deprecated'))    AS dep,
-        round({W['lex']} * lex + {W['rec']} * rec + {W['cen']} * cen
+        round({W['lex']} * lex + {W['vec']} * vec + {W['rec']} * rec + {W['cen']} * cen
               + {w_dep} * dep, 4)                               AS score
     FROM chgraph.nodes AS n FINAL
+    {vec_join}
     LEFT JOIN recency AS r ON n.file_path = r.path
     LEFT JOIN degree AS d ON n.qualified_name = d.qn
     WHERE {where}
     ORDER BY score DESC, qualified_name
     LIMIT {int(limit)} OFFSET {int(offset)}
     """
-    count_sql = f"""
-    SELECT count() AS n FROM chgraph.nodes AS n FINAL WHERE {where}
-    """
+    count_cte = f"WITH {vec_top_cte.rstrip(', \n')}\n" if vec_on else ""
+    count_sql = f"{count_cte}SELECT count() AS n FROM chgraph.nodes AS n FINAL WHERE {where}"
     rows = store.rows(sql)
     total = store.rows(count_sql)[0]["n"]
     return SearchPage(items=rows, total=total, has_more=offset + len(rows) < total)

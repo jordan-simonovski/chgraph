@@ -86,6 +86,21 @@ def _is_deprecated_def(node, text) -> bool:
     return False
 
 
+def _docstring(body, text) -> str:
+    """First paragraph of a def's docstring (single line, capped) — the NL description
+    used to build embed-text (indexer). Empty when there is no docstring."""
+    if body is None or not body.named_children:
+        return ""
+    first = body.named_children[0]
+    if first.type != "expression_statement" or not first.named_children:
+        return ""
+    s = first.named_children[0]
+    if s.type != "string":
+        return ""
+    content = "".join(text(c) for c in s.named_children if c.type == "string_content").strip()
+    return content.split("\n\n")[0].replace("\n", " ").strip()[:200]
+
+
 def _module_name(rel_path: str) -> str:
     p = rel_path[:-3] if rel_path.endswith(".py") else rel_path
     if p.endswith("/__init__"):
@@ -100,6 +115,7 @@ def parse_file(rel_path: str, source: bytes) -> tuple[list[dict], list[dict]]:
         "label": "File", "name": rel_path.rsplit("/", 1)[-1],
         "qualified_name": rel_path, "file_path": rel_path,
         "start_line": 1, "end_line": tree.root_node.end_point[0] + 1, "properties": "{}",
+        "doc": "",   # transient (indexer pops it to build embed-text); never persisted to nodes
     }]
     edges: list[dict] = []
     module_defs: dict[str, str] = {}     # local name -> qualified_name (module-level defs)
@@ -117,6 +133,7 @@ def parse_file(rel_path: str, source: bytes) -> tuple[list[dict], list[dict]]:
             "label": kind, "name": name, "qualified_name": qn, "file_path": rel_path,
             "start_line": node.start_point[0] + 1, "end_line": node.end_point[0] + 1,
             "properties": props,
+            "doc": _docstring(node.child_by_field_name("body"), text),
         })
         edges.append({"source": rel_path, "target": qn, "type": "DEFINES", "properties": "{}"})
         return qn
