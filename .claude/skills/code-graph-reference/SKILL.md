@@ -310,7 +310,7 @@ score(symbol, query) = Σᵢ wᵢ · sᵢ      with Σ wᵢ = 1
 
 | Signal | Definition | Normalization |
 |---|---|---|
-| `s_lex` | Subtoken overlap: \|query_subtokens ∩ symbol_subtokens\| / \|query_subtokens\| | already [0,1] |
+| `s_lex` | Subtoken **Jaccard**: \|query_subtokens ∩ symbol_subtokens\| / \|query_subtokens ∪ symbol_subtokens\| (VERIFIED 2026-07-08 to beat query-coverage \|q∩s\|/\|q\|, which barely improved on the binary placeholder — Jaccard penalizes extra symbol tokens so exact names win; ADR-0003). qn-only matches keep a 0.15 floor. | already [0,1] |
 | `s_vec` | `1 - cosineDistance(embedding, query_embedding)` (brute force; HNSW is compiled out of chdb — see `chdb-reference`) | already [0,1] for non-negative embeddings; clamp otherwise |
 | `s_recency` | `exp(-ln(2)/H · days_since_last_touch)`, half-life H days (from git history, §7) | already [0,1] |
 | `s_central` | `log1p(in_degree) / log1p(max_in_degree)` over CALLS edges (log damping: hub symbols shouldn't drown everything) | [0,1] by construction |

@@ -88,3 +88,27 @@ def test_dep_signal_surfaces_and_flag_demotes(store, monkeypatch):
     monkeypatch.setenv("CHGRAPH_RANK_DEPRECATION_WEIGHT", "-0.5")
     ranked = [i["qualified_name"] for i in search_graph(store, "p", query="Widget").items]
     assert ranked.index("pkg.Widget") < ranked.index("old.Widget")
+
+
+def test_subtokens_splits_identifiers():
+    from chgraph.search import _subtokens
+    assert _subtokens("HttpResponseRedirect") == ["http", "response", "redirect"]
+    assert _subtokens("get_user_by_id") == ["get", "user", "by", "id"]
+    assert _subtokens("XMLHttpRequest2") == ["xml", "http", "request2"]  # trailing digit attaches
+
+
+def test_jaccard_lexical_ranks_exact_above_partial(store, monkeypatch):
+    # same query token appears in an exact-name symbol and a longer partial-match symbol
+    _insert_node(store, "a.MetaData", "MetaData")
+    _insert_node(store, "b.MetaDataFactoryBuilder", "MetaDataFactoryBuilder")
+    monkeypatch.setenv("CHGRAPH_RANK_LEXICAL", "jaccard")
+    ranked = [i["qualified_name"] for i in search_graph(store, "p", query="MetaData").items]
+    assert ranked.index("a.MetaData") < ranked.index("b.MetaDataFactoryBuilder")
+    items = {i["qualified_name"]: i for i in search_graph(store, "p", query="MetaData").items}
+    assert items["a.MetaData"]["lex"] == 1.0                    # {meta,data} == {meta,data}
+    assert items["b.MetaDataFactoryBuilder"]["lex"] < 1.0        # extra subtokens -> lower Jaccard
+
+    # binary escape hatch: both are full substring matches -> tie at 1.0 (the old placeholder)
+    monkeypatch.setenv("CHGRAPH_RANK_LEXICAL", "binary")
+    items = {i["qualified_name"]: i for i in search_graph(store, "p", query="MetaData").items}
+    assert items["a.MetaData"]["lex"] == items["b.MetaDataFactoryBuilder"]["lex"] == 1.0

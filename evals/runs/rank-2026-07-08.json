@@ -3,9 +3,9 @@
   "slices": {
     "staleness": {
       "n": 4,
-      "blind": 0.2708333333333333,
-      "hybrid": 0.2708333333333333,
-      "hybrid+dep": 0.3833333333333333
+      "blind": 0.375,
+      "hybrid": 0.375,
+      "hybrid+dep": 0.625
     },
     "general": {
       "n": 10,
@@ -42,7 +42,7 @@
     },
     "gates": {
       "staleness_gain": {
-        "value": 0.11249999999999999,
+        "value": 0.25,
         "bar": 0.1,
         "pass": true
       },
