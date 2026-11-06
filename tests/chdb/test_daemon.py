@@ -11,8 +11,8 @@ from chgraph.client import DaemonClient, DaemonError
 from chgraph.paths import ProjectPaths
 
 
-@pytest.fixture
-def daemon(tmp_path, synth_repo):
+@pytest.fixture(params=["local", "durable"])
+def daemon(tmp_path, synth_repo, request):
     # Short, unique, per-process data dir directly under /tmp (not pytest's
     # tmp_path, which nests deep enough that daemon.sock overflows AF_UNIX's
     # ~104-byte sockaddr_un limit on macOS once CHGRAPH_DATA_DIR/<slug>/ is
@@ -20,6 +20,8 @@ def daemon(tmp_path, synth_repo):
     # hack, so it can't collide across concurrent/multi-user test runs.
     data_dir = tempfile.mkdtemp(dir="/tmp", prefix=f"cg{os.getpid()}-")
     env = {**os.environ, "CHGRAPH_DATA_DIR": data_dir}
+    if request.param == "durable":
+        env["CHGRAPH_DURABLE_URI"] = f"local:{tmp_path / 'durable'}"
     proc = subprocess.Popen(
         [sys.executable, "-m", "chgraph.daemon", str(synth_repo)],
         env=env, stderr=subprocess.PIPE,

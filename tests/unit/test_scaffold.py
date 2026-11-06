@@ -7,4 +7,4 @@ def test_version():
 
 def test_chdb_pin():
     import chdb
-    assert chdb.__version__ == "26.5.0"  # wrapper pin is 4.2.0; __version__ reports core
+    assert chdb.__version__ == "4.4.0"

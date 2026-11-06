@@ -50,6 +50,7 @@ DDL = [
 ]
 
 
-def create_all(sess) -> None:
-    for stmt in DDL:
-        sess.query(stmt)
+def create_all(store, *, create_database: bool = True) -> None:
+    # Durable owns the database lifecycle; only table DDL belongs in its WAL.
+    for stmt in DDL[0 if create_database else 1:]:
+        store.exec(stmt)

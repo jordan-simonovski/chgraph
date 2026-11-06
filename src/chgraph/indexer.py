@@ -1,14 +1,12 @@
 """Repo -> graph. Batch writes only (INV-5); honest degradation reporting (INV-3)."""
-import json
 import os
 import subprocess
-import tempfile
 from dataclasses import dataclass, field
 from typing import Callable
 
 from chgraph import embeddings
 from chgraph.evolution import _q, refresh_file_evolution
-from chgraph.gitingest import ingest_git, verify_git_counts
+from chgraph.gitingest import _batch_load, ingest_git, verify_git_counts
 from chgraph.parse_python import parse_file
 from chgraph.store import Store
 from chgraph.text import subtokens
@@ -32,19 +30,6 @@ def _py_files(repo_root: str) -> list[str]:
     out = subprocess.run(["git", "-C", repo_root, "ls-files", "*.py"],
                          check=True, capture_output=True, text=True).stdout
     return [line for line in out.splitlines() if line.strip()]
-
-
-def _batch_insert(store: Store, table: str, rows: list[dict]) -> None:
-    if not rows:
-        return
-    with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False) as f:
-        for r in rows:
-            f.write(json.dumps(r) + "\n")
-        tmp = f.name
-    try:
-        store.exec(f"INSERT INTO {table} SELECT * FROM file('{tmp}', 'JSONEachRow')")
-    finally:
-        os.unlink(tmp)
 
 
 def index_repository(store: Store, project: str, repo_root: str,
@@ -85,8 +70,8 @@ def index_repository(store: Store, project: str, repo_root: str,
         if on_progress:
             on_progress(done, len(files))
 
-    _batch_insert(store, "chgraph.nodes", node_rows)
-    _batch_insert(store, "chgraph.edges", edge_rows)
+    _batch_load(store, "chgraph.nodes", node_rows)
+    _batch_load(store, "chgraph.edges", edge_rows)
     store.exec("OPTIMIZE TABLE chgraph.nodes FINAL")
     store.exec("OPTIMIZE TABLE chgraph.edges FINAL")
 
@@ -94,7 +79,7 @@ def index_repository(store: Store, project: str, repo_root: str,
     # silently — core indexing is unaffected and the vector signal stays inert.
     if embeddings.available() and embed_qns:
         vecs = embeddings.embed(embed_texts)
-        _batch_insert(store, "chgraph.embeddings", [
+        _batch_load(store, "chgraph.embeddings", [
             {"project": project, "qualified_name": qn, "vec": v, "version": version}
             for qn, v in zip(embed_qns, vecs)
         ])
@@ -113,5 +98,6 @@ def index_repository(store: Store, project: str, repo_root: str,
             f"({symbol_nodes} symbols over {total_lines} lines) — parser likely failed silently"
         )
 
+    store.checkpoint()
     return IndexResult(version=version, files_total=len(files), files_done=done,
                        nodes=len(node_rows), edges=len(edge_rows), degraded_reasons=reasons)
