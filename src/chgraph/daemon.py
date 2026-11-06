@@ -32,8 +32,9 @@ class SessionWorker:
     chgraph-architecture-contract weak points).
     ponytail: global serialization; per-op scheduling only if throughput ever demands it."""
 
-    def __init__(self, chdb_dir: str | Path):
+    def __init__(self, chdb_dir: str | Path, *, project: str | None = None):
         self._chdb_dir = chdb_dir
+        self._project = project
         self._q: queue.Queue = queue.Queue()
         # Signals the outcome of Store.open() back to whoever constructed us,
         # so open errors ("Cannot lock file", "EmbeddedServer already initialized")
@@ -49,7 +50,8 @@ class SessionWorker:
 
     def _run(self):
         try:
-            store = Store.open(self._chdb_dir)
+            store = Store.open(self._chdb_dir, durable_uri=os.environ.get("CHGRAPH_DURABLE_URI"),
+                               project=self._project)
         except Exception as e:                          # noqa: BLE001 — surfaced via wait_ready()
             self._open_result.set_exception(e)
             return
@@ -82,6 +84,8 @@ class SessionWorker:
         self._q.put((None, fut))
         try:
             fut.result(timeout=30)
+            # The sentinel is acknowledged before finally releases the store's writer lease.
+            self._t.join()
         except concurrent.futures.TimeoutError:
             # The worker didn't drain in time (e.g. stuck on a long-running query).
             # The sentinel stays queued; the worker thread will still close the
@@ -97,7 +101,7 @@ class Daemon:
         self.project = project_slug(self.repo_root)
         self.paths = ProjectPaths.for_repo(self.repo_root)
         self.paths.ensure()
-        self.worker = SessionWorker(self.paths.chdb_dir)
+        self.worker = SessionWorker(self.paths.chdb_dir, project=self.project)
         # Blocks until the worker thread has opened the Store; re-raises the open
         # error (e.g. "Cannot lock file", "EmbeddedServer already initialized") here
         # on the main thread so run_daemon's except clause still sees it (INV-1: F).

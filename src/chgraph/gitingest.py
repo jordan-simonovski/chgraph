@@ -1,10 +1,8 @@
 """git log --numstat -> chgraph.git_commits / git_file_changes.
 Prototype verified in chgraph-git-evolution-campaign Phase 2. Batch loads only (INV-5)."""
 import json
-import os
 import re
 import subprocess
-import tempfile
 from dataclasses import dataclass
 
 from chgraph.store import Store
@@ -63,16 +61,10 @@ def parse_git_log(repo_root: str, project: str) -> tuple[list[dict], list[dict]]
 
 
 def _batch_load(store: Store, table: str, rows: list[dict]) -> None:
-    if not rows:
-        return
-    with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False) as f:
-        for r in rows:
-            f.write(json.dumps(r) + "\n")
-        tmp = f.name
-    try:
-        store.exec(f"INSERT INTO {table} SELECT * FROM file('{tmp}', 'JSONEachRow')")
-    finally:
-        os.unlink(tmp)
+    # Inline data survives WAL replay; a temporary file would disappear before recovery.
+    for start in range(0, len(rows), 1000):
+        data = "\n".join(json.dumps(r) for r in rows[start:start + 1000])
+        store.exec(f"INSERT INTO {table} FORMAT JSONEachRow\n{data}")
 
 
 def ingest_git(store: Store, project: str, repo_root: str) -> GitIngestCounts:

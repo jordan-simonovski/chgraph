@@ -132,6 +132,38 @@ per project — everything routes through it because chdb's data-dir lock is
 exclusive. To hand a graph to a teammate, ship that directory (the daemon must
 be stopped first).
 
+### Optional durable storage
+
+Install S3 support with `uv sync --extra durable`, then set a namespace before
+starting the daemon:
+
+```bash
+export CHGRAPH_DURABLE_URI=s3://my-bucket/chgraph
+# Or keep checkpoints and WAL in a separate local directory:
+# export CHGRAPH_DURABLE_URI=local:/mnt/persistent/chgraph
+uv run --extra durable chgraph index /path/to/repo
+```
+
+With this variable unset, chgraph uses its usual local `chdb/` directory.
+Restart an existing daemon after changing the variable. Durable mode starts a
+separate graph; it does not import an existing local graph. Index once to populate it.
+S3 credentials use the normal AWS credential chain; keep them out of the URI.
+
+The project's existing slug is the durable object ID. It includes a hash of the
+absolute repository path, so recovery on another machine requires the same
+repository path and namespace. Local socket, status and log files still live under
+`CHGRAPH_DATA_DIR`; the durable graph restores independently of those files.
+After recovery, status starts as `uninitialized` if its local file is missing;
+the restored graph can still be queried.
+
+The daemon holds the object's single-writer lease. Stop it before opening the
+same project elsewhere; lease or storage errors fail the operation without falling
+back to local storage. Mutations flush before returning, and a completed full index
+checkpoints before reporting success. Failed or interrupted reindexing can leave a
+partial graph, as with local storage; rerun indexing to repair it. Durable storage
+contains source-derived graph data and git author metadata, so use a private bucket.
+Upstream retains superseded checkpoints and WAL; storage cleanup is not automatic.
+
 ## What sets it apart
 
 These are **architectural and design** differences, not quality claims — chgraph

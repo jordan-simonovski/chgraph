@@ -11,8 +11,30 @@ from chgraph.client import DaemonClient, DaemonError
 from chgraph.paths import ProjectPaths
 
 
-@pytest.fixture
-def daemon(tmp_path, synth_repo):
+def test_worker_stop_waits_for_store_close(tmp_path, monkeypatch):
+    from chgraph.daemon import SessionWorker
+    from chgraph.store import Store
+
+    closed = []
+    original_close = Store.close
+
+    def slow_close(store):
+        time.sleep(0.1)
+        original_close(store)
+        closed.append(True)
+
+    monkeypatch.setattr(Store, "close", slow_close)
+    worker = SessionWorker(tmp_path / "data")
+    worker.wait_ready()
+    try:
+        worker.stop()
+        assert closed, "stop returned before store close finished"
+    finally:
+        worker._t.join(timeout=10)
+
+
+@pytest.fixture(params=["local", "durable"])
+def daemon(tmp_path, synth_repo, request):
     # Short, unique, per-process data dir directly under /tmp (not pytest's
     # tmp_path, which nests deep enough that daemon.sock overflows AF_UNIX's
     # ~104-byte sockaddr_un limit on macOS once CHGRAPH_DATA_DIR/<slug>/ is
@@ -20,6 +42,8 @@ def daemon(tmp_path, synth_repo):
     # hack, so it can't collide across concurrent/multi-user test runs.
     data_dir = tempfile.mkdtemp(dir="/tmp", prefix=f"cg{os.getpid()}-")
     env = {**os.environ, "CHGRAPH_DATA_DIR": data_dir}
+    if request.param == "durable":
+        env["CHGRAPH_DURABLE_URI"] = f"local:{tmp_path / 'durable'}"
     proc = subprocess.Popen(
         [sys.executable, "-m", "chgraph.daemon", str(synth_repo)],
         env=env, stderr=subprocess.PIPE,
@@ -37,7 +61,7 @@ def daemon(tmp_path, synth_repo):
     else:
         proc.kill()
         pytest.fail("daemon never answered ping: " + proc.stderr.read().decode()[-2000:])
-    yield client, paths
+    yield client, paths, proc, env
     try:
         client.call("shutdown")
     except DaemonError:
@@ -58,7 +82,7 @@ def _wait_indexed(client, timeout=60):
 
 
 def test_index_then_query_roundtrip(daemon):
-    client, paths = daemon
+    client, paths, _, _ = daemon
     job = client.call("index")
     assert job["state"] == "queued" and job["job_id"]
     st = _wait_indexed(client)
@@ -79,16 +103,16 @@ def test_index_then_query_roundtrip(daemon):
 
 
 def test_unknown_op_is_error_not_crash(daemon):
-    client, _ = daemon
+    client, _, _, _ = daemon
     with pytest.raises(DaemonError):
         client.call("frobnicate")
     assert client.call("ping")["pong"] is True   # still alive
 
 
-def test_shutdown_releases_socket_and_pidfile(daemon):
+def test_shutdown_releases_socket_pidfile_and_writer_lease(daemon, synth_repo):
     """INV lifecycle: a clean shutdown must release the socket and pidfile so a
     subsequent daemon for the same project can start without stale-state errors."""
-    client, paths = daemon
+    client, paths, proc, env = daemon
     assert paths.socket.exists()
     assert paths.pidfile.exists()
     client.call("shutdown")
@@ -97,6 +121,29 @@ def test_shutdown_releases_socket_and_pidfile(daemon):
         time.sleep(0.1)
     assert not paths.socket.exists(), "socket still present after shutdown"
     assert not paths.pidfile.exists(), "pidfile still present after shutdown"
+    proc.wait(timeout=10)
+
+    restarted = subprocess.Popen(
+        [sys.executable, "-m", "chgraph.daemon", str(synth_repo)],
+        env=env, stderr=subprocess.PIPE,
+    )
+    try:
+        for _ in range(100):
+            if restarted.poll() is not None:
+                pytest.fail("restart failed: " + restarted.stderr.read().decode()[-2000:])
+            try:
+                assert client.call("ping")["pong"] is True
+                break
+            except DaemonError:
+                time.sleep(0.1)
+        else:
+            pytest.fail("restarted daemon never answered ping")
+        client.call("shutdown")
+        restarted.wait(timeout=10)
+    finally:
+        if restarted.poll() is None:
+            restarted.kill()
+            restarted.wait(timeout=10)
 
 
 def test_index_failure_reports_failed_state(tmp_path):
