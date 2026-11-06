@@ -1,0 +1,1131 @@
+{
+  "baseline_commit": "8b84718d78edb947f1cbae04cbda7789f582e893",
+  "goldens_sha256": "bf95b8618c4dffc7174c697dc8df0313bf22641804254ebabf3747785f7b58a2",
+  "judge": "deterministic exact-symbol MRR@10; no agent answer-quality evaluation",
+  "runs": {
+    "baseline_native": {
+      "django": {
+        "counts": {
+          "version": 1,
+          "files_total": 2924,
+          "files_done": 2924,
+          "nodes": 46356,
+          "edges": 99034,
+          "degraded_reasons": []
+        },
+        "queries": [
+          {
+            "query": "StringAgg",
+            "expected": "django.db.models.aggregates.StringAgg",
+            "repo": "django",
+            "slice": "staleness",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.db.models.aggregates.StringAgg",
+              "django.db.models.aggregates.StringAggDelimiter",
+              "django.contrib.postgres.aggregates.general.StringAgg",
+              "tests.aggregation.tests.AggregateTestCase.test_distinct_on_stringagg",
+              "tests.aggregation.tests.AggregateTestCase.test_distinct_on_stringagg_sqlite_special_case",
+              "tests.aggregation.tests.AggregateTestCase.test_stringagg_default_value",
+              "django.db.models.aggregates.StringAgg.__init__",
+              "django.db.models.aggregates.StringAgg.as_mysql",
+              "django.db.models.aggregates.StringAgg.as_oracle",
+              "django.db.models.aggregates.StringAgg.as_sqlite"
+            ]
+          },
+          {
+            "query": "BitAnd",
+            "expected": "django.db.models.aggregates.BitAnd",
+            "repo": "django",
+            "slice": "staleness",
+            "rank": 2,
+            "rr_at_10": 0.5,
+            "top10": [
+              "django.db.backends.sqlite3._functions.BitAnd",
+              "django.db.models.aggregates.BitAnd",
+              "django.contrib.postgres.aggregates.general.BitAnd",
+              "django.db.models.expressions.Combinable.bitand",
+              "django.contrib.postgres.aggregates.general.BitAnd.__init__"
+            ]
+          },
+          {
+            "query": "BitOr",
+            "expected": "django.db.models.aggregates.BitOr",
+            "repo": "django",
+            "slice": "staleness",
+            "rank": 2,
+            "rr_at_10": 0.5,
+            "top10": [
+              "django.db.backends.sqlite3._functions.BitOr",
+              "django.db.models.aggregates.BitOr",
+              "django.contrib.postgres.aggregates.general.BitOr",
+              "django.db.models.expressions.Combinable.bitor",
+              "django.contrib.postgres.aggregates.general.BitOr.__init__"
+            ]
+          },
+          {
+            "query": "BitXor",
+            "expected": "django.db.models.aggregates.BitXor",
+            "repo": "django",
+            "slice": "staleness",
+            "rank": 2,
+            "rr_at_10": 0.5,
+            "top10": [
+              "django.db.backends.sqlite3._functions.BitXor",
+              "django.db.models.aggregates.BitXor",
+              "django.contrib.postgres.aggregates.general.BitXor",
+              "django.db.backends.sqlite3._functions._sqlite_bitxor",
+              "django.db.models.expressions.Combinable.bitxor",
+              "django.contrib.postgres.aggregates.general.BitXor.__init__"
+            ]
+          },
+          {
+            "query": "HttpResponseRedirect",
+            "expected": "django.http.response.HttpResponseRedirect",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.http.response.HttpResponseRedirect",
+              "django.http.response.HttpResponseRedirectBase",
+              "django.http.response.HttpResponseRedirectBase.__init__",
+              "django.http.response.HttpResponseRedirectBase.__repr__"
+            ]
+          },
+          {
+            "query": "SuspiciousOperation",
+            "expected": "django.core.exceptions.SuspiciousOperation",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.core.exceptions.SuspiciousOperation"
+            ]
+          },
+          {
+            "query": "FieldDoesNotExist",
+            "expected": "django.core.exceptions.FieldDoesNotExist",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.core.exceptions.FieldDoesNotExist"
+            ]
+          },
+          {
+            "query": "SimpleLazyObject",
+            "expected": "django.utils.functional.SimpleLazyObject",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.utils.functional.SimpleLazyObject",
+              "tests.utils_tests.test_lazyobject.SimpleLazyObjectTestCase",
+              "tests.utils_tests.test_lazyobject.SimpleLazyObjectPickleTestCase",
+              "tests.utils_tests.test_simplelazyobject.TestUtilsSimpleLazyObjectDjangoTestCase",
+              "tests.utils_tests.test_lazyobject.SimpleLazyObjectTestCase.lazy_wrap",
+              "tests.utils_tests.test_lazyobject.SimpleLazyObjectTestCase.test_repr_bound_method.MyLazyGenerator",
+              "django.utils.functional.SimpleLazyObject.__copy__",
+              "django.utils.functional.SimpleLazyObject.__deepcopy__",
+              "django.utils.functional.SimpleLazyObject.__init__",
+              "django.utils.functional.SimpleLazyObject.__radd__"
+            ]
+          },
+          {
+            "query": "JsonResponse",
+            "expected": "django.http.response.JsonResponse",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.http.response.JsonResponse",
+              "tests.httpwrappers.tests.JsonResponseTests",
+              "tests.view_tests.tests.test_json.JsonResponseTests",
+              "tests.view_tests.tests.test_json.JsonResponseTests.test_json_response",
+              "tests.httpwrappers.tests.JsonResponseTests.test_json_response_list",
+              "tests.httpwrappers.tests.JsonResponseTests.test_json_response_text",
+              "tests.httpwrappers.tests.JsonResponseTests.test_json_response_uuid",
+              "tests.httpwrappers.tests.JsonResponseTests.test_json_response_custom_encoder",
+              "tests.httpwrappers.tests.JsonResponseTests.test_json_response_non_ascii",
+              "tests.httpwrappers.tests.JsonResponseTests.test_json_response_passing_arguments_to_json_dumps"
+            ]
+          },
+          {
+            "query": "EmailMultiAlternatives",
+            "expected": "django.core.mail.message.EmailMultiAlternatives",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.core.mail.message.EmailMultiAlternatives",
+              "django.core.mail.message.EmailMultiAlternatives.__init__",
+              "django.core.mail.message.EmailMultiAlternatives._add_bodies",
+              "django.core.mail.message.EmailMultiAlternatives.attach_alternative",
+              "django.core.mail.message.EmailMultiAlternatives.body_contains"
+            ]
+          },
+          {
+            "query": "AdminEmailHandler",
+            "expected": "django.utils.log.AdminEmailHandler",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.utils.log.AdminEmailHandler",
+              "tests.logging_tests.tests.AdminEmailHandlerTest",
+              "tests.logging_tests.tests.AdminEmailHandlerTest.get_admin_email_handler",
+              "tests.logging_tests.tests.AdminEmailHandlerTest.test_error_when_subclass_defines_undocumented_connection_method.CustomAdminEmailHandler",
+              "tests.logging_tests.tests.AdminEmailHandlerTest.test_customize_send_mail_method.ManagerEmailHandler",
+              "django.utils.log.AdminEmailHandler.__init__",
+              "django.utils.log.AdminEmailHandler.emit",
+              "django.utils.log.AdminEmailHandler.format_subject",
+              "django.utils.log.AdminEmailHandler.send_mail",
+              "tests.logging_tests.tests.AdminEmailHandlerTest.make_log_record"
+            ]
+          },
+          {
+            "query": "LazySettings",
+            "expected": "django.conf.LazySettings",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.conf.LazySettings",
+              "tests.urlpatterns_reverse.tests.ReverseLazySettingsTest",
+              "tests.urlpatterns_reverse.tests.ReverseLazySettingsTest.test_lazy_in_settings",
+              "django.conf.LazySettings.__delattr__",
+              "django.conf.LazySettings.__dir__",
+              "django.conf.LazySettings.__getattr__",
+              "django.conf.LazySettings.__repr__",
+              "django.conf.LazySettings.__setattr__",
+              "django.conf.LazySettings._add_script_prefix",
+              "django.conf.LazySettings._setup"
+            ]
+          },
+          {
+            "query": "BasePaginator",
+            "expected": "django.core.paginator.BasePaginator",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.core.paginator.BasePaginator",
+              "django.core.paginator.BasePaginator.__init__",
+              "django.core.paginator.BasePaginator._check_object_list_is_ordered",
+              "django.core.paginator.BasePaginator._get_elided_page_range",
+              "django.core.paginator.BasePaginator._get_page",
+              "django.core.paginator.BasePaginator._validate_number"
+            ]
+          },
+          {
+            "query": "Urlizer",
+            "expected": "django.utils.html.Urlizer",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.utils.html.Urlizer",
+              "django.utils.html.Urlizer.__call__",
+              "django.utils.html.Urlizer.handle_word",
+              "django.utils.html.Urlizer.is_email_simple",
+              "django.utils.html.Urlizer.trailing_punctuation_chars_has_semicolon",
+              "django.utils.html.Urlizer.trailing_punctuation_chars_no_semicolon",
+              "django.utils.html.Urlizer.trim_punctuation",
+              "django.utils.html.Urlizer.trim_url",
+              "django.utils.html.Urlizer.wrapping_punctuation_openings"
+            ]
+          }
+        ],
+        "seconds": 34.70244870800525
+      },
+      "sqlalchemy": {
+        "counts": {
+          "version": 1,
+          "files_total": 669,
+          "files_done": 669,
+          "nodes": 40524,
+          "edges": 126105,
+          "degraded_reasons": []
+        },
+        "queries": [
+          {
+            "query": "noload",
+            "expected": "lib.sqlalchemy.orm.strategy_options.noload",
+            "repo": "sqlalchemy",
+            "slice": "staleness",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "lib.sqlalchemy.orm.strategy_options.noload",
+              "lib.sqlalchemy.orm.strategy_options._AbstractLoad.noload",
+              "lib.sqlalchemy.testing.assertions.expect_noload_deprecation",
+              "test.orm.test_dynamic._UOWTests.test_noload_add",
+              "test.orm.test_dynamic._UOWTests.test_noload_remove",
+              "test.orm.test_deprecations.DynamicTest.test_noload_issue",
+              "test.orm.test_deprecations.NoLoadTest.test_o2m_noload",
+              "test.orm.test_deprecations.WriteOnlyTest.test_noload_issue",
+              "test.orm.test_lazy_relations.M2OGetTest.test_m2o_noload",
+              "test.orm.test_deprecations.DefaultStrategyOptionsTest.test_noload_with_joinedload"
+            ]
+          },
+          {
+            "query": "tuples",
+            "expected": "lib.sqlalchemy.orm.query.RowReturningQuery.tuples",
+            "repo": "sqlalchemy",
+            "slice": "staleness",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "lib.sqlalchemy.orm.query.RowReturningQuery.tuples",
+              "lib.sqlalchemy.sql.cache_key.CacheKey._diff_tuples",
+              "lib.sqlalchemy.testing.suite.test_select.ValuesExpressionTest.test_tuples",
+              "lib.sqlalchemy.engine.result.Result.tuples",
+              "lib.sqlalchemy.orm.query.Query.tuples",
+              "lib.sqlalchemy.ext.asyncio.result.AsyncResult.tuples",
+              "lib.sqlalchemy.engine._result_cy.BaseResultInternal._raw_all_tuples",
+              "test.sql.test_resultset.AllTuplesTest",
+              "test.sql.test_resultset.CursorResultTest.test_result_tuples",
+              "lib.sqlalchemy.orm.descriptor_props.CompositeProperty.Comparator._bulk_update_tuples"
+            ]
+          },
+          {
+            "query": "MetaData",
+            "expected": "lib.sqlalchemy.sql.schema.MetaData",
+            "repo": "sqlalchemy",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "lib.sqlalchemy.sql.schema.MetaData",
+              "lib.sqlalchemy.engine.result.ResultMetaData",
+              "test.sql.test_metadata.MetaDataTest",
+              "lib.sqlalchemy.engine.result.SimpleResultMetaData",
+              "lib.sqlalchemy.engine.cursor.CursorResultMetaData",
+              "lib.sqlalchemy.engine.cursor._NoResultMetaData",
+              "test.sql.test_metadata.ToMetaDataTest",
+              "test.sql.test_deprecations.ToMetaDataTest",
+              "test.sql.test_metadata.UseExistingTest.empty_meta",
+              "test.sql.test_metadata.UseExistingTest.existing_meta"
+            ]
+          },
+          {
+            "query": "Session",
+            "expected": "lib.sqlalchemy.orm.session.Session",
+            "repo": "sqlalchemy",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "lib.sqlalchemy.orm.session.Session",
+              "lib.sqlalchemy.orm.dynamic._AppenderMixin.session",
+              "lib.sqlalchemy.orm.query.BulkUD.session",
+              "lib.sqlalchemy.orm.state.InstanceState.session",
+              "lib.sqlalchemy.testing.fixtures.orm.ORMTest.fixture_session",
+              "lib.sqlalchemy.testing.fixtures.orm.fixture_session",
+              "lib.sqlalchemy.orm.session.SessionTransaction",
+              "lib.sqlalchemy.orm.session._SessionClassMethods.object_session",
+              "lib.sqlalchemy.orm.session._state_session",
+              "lib.sqlalchemy.orm.session.object_session"
+            ]
+          },
+          {
+            "query": "create_engine",
+            "expected": "lib.sqlalchemy.engine.create.create_engine",
+            "repo": "sqlalchemy",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "lib.sqlalchemy.engine.create.create_engine",
+              "test.engine.test_parseconnect.URLTest.test_create_engine_url_invalid",
+              "test.engine.test_parseconnect.TestGetDialect.test_is_async_to_create_engine",
+              "test.ext.asyncio.test_engine.AsyncEngineTest.test_cant_use_async_pool_w_create_engine",
+              "lib.sqlalchemy.engine.create.create_engine.connect",
+              "lib.sqlalchemy.engine.create.create_engine.first_connect",
+              "lib.sqlalchemy.engine.create.create_engine.on_connect",
+              "lib.sqlalchemy.engine.create.create_engine.pop_kwarg",
+              "test.engine.test_parseconnect.TestGetDialect.test_is_async_to_create_engine.get_dialect_cls"
+            ]
+          }
+        ],
+        "seconds": 24.88319041696377
+      }
+    },
+    "current_native": {
+      "django": {
+        "counts": {
+          "version": 1,
+          "files_total": 2924,
+          "files_done": 2924,
+          "nodes": 46356,
+          "edges": 99034,
+          "degraded_reasons": []
+        },
+        "queries": [
+          {
+            "query": "StringAgg",
+            "expected": "django.db.models.aggregates.StringAgg",
+            "repo": "django",
+            "slice": "staleness",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.db.models.aggregates.StringAgg",
+              "django.db.models.aggregates.StringAggDelimiter",
+              "django.contrib.postgres.aggregates.general.StringAgg",
+              "tests.aggregation.tests.AggregateTestCase.test_distinct_on_stringagg",
+              "tests.aggregation.tests.AggregateTestCase.test_distinct_on_stringagg_sqlite_special_case",
+              "tests.aggregation.tests.AggregateTestCase.test_stringagg_default_value",
+              "django.db.models.aggregates.StringAgg.__init__",
+              "django.db.models.aggregates.StringAgg.as_mysql",
+              "django.db.models.aggregates.StringAgg.as_oracle",
+              "django.db.models.aggregates.StringAgg.as_sqlite"
+            ]
+          },
+          {
+            "query": "BitAnd",
+            "expected": "django.db.models.aggregates.BitAnd",
+            "repo": "django",
+            "slice": "staleness",
+            "rank": 2,
+            "rr_at_10": 0.5,
+            "top10": [
+              "django.db.backends.sqlite3._functions.BitAnd",
+              "django.db.models.aggregates.BitAnd",
+              "django.contrib.postgres.aggregates.general.BitAnd",
+              "django.db.models.expressions.Combinable.bitand",
+              "django.contrib.postgres.aggregates.general.BitAnd.__init__"
+            ]
+          },
+          {
+            "query": "BitOr",
+            "expected": "django.db.models.aggregates.BitOr",
+            "repo": "django",
+            "slice": "staleness",
+            "rank": 2,
+            "rr_at_10": 0.5,
+            "top10": [
+              "django.db.backends.sqlite3._functions.BitOr",
+              "django.db.models.aggregates.BitOr",
+              "django.contrib.postgres.aggregates.general.BitOr",
+              "django.db.models.expressions.Combinable.bitor",
+              "django.contrib.postgres.aggregates.general.BitOr.__init__"
+            ]
+          },
+          {
+            "query": "BitXor",
+            "expected": "django.db.models.aggregates.BitXor",
+            "repo": "django",
+            "slice": "staleness",
+            "rank": 2,
+            "rr_at_10": 0.5,
+            "top10": [
+              "django.db.backends.sqlite3._functions.BitXor",
+              "django.db.models.aggregates.BitXor",
+              "django.contrib.postgres.aggregates.general.BitXor",
+              "django.db.backends.sqlite3._functions._sqlite_bitxor",
+              "django.db.models.expressions.Combinable.bitxor",
+              "django.contrib.postgres.aggregates.general.BitXor.__init__"
+            ]
+          },
+          {
+            "query": "HttpResponseRedirect",
+            "expected": "django.http.response.HttpResponseRedirect",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.http.response.HttpResponseRedirect",
+              "django.http.response.HttpResponseRedirectBase",
+              "django.http.response.HttpResponseRedirectBase.__init__",
+              "django.http.response.HttpResponseRedirectBase.__repr__"
+            ]
+          },
+          {
+            "query": "SuspiciousOperation",
+            "expected": "django.core.exceptions.SuspiciousOperation",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.core.exceptions.SuspiciousOperation"
+            ]
+          },
+          {
+            "query": "FieldDoesNotExist",
+            "expected": "django.core.exceptions.FieldDoesNotExist",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.core.exceptions.FieldDoesNotExist"
+            ]
+          },
+          {
+            "query": "SimpleLazyObject",
+            "expected": "django.utils.functional.SimpleLazyObject",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.utils.functional.SimpleLazyObject",
+              "tests.utils_tests.test_lazyobject.SimpleLazyObjectTestCase",
+              "tests.utils_tests.test_lazyobject.SimpleLazyObjectPickleTestCase",
+              "tests.utils_tests.test_simplelazyobject.TestUtilsSimpleLazyObjectDjangoTestCase",
+              "tests.utils_tests.test_lazyobject.SimpleLazyObjectTestCase.lazy_wrap",
+              "tests.utils_tests.test_lazyobject.SimpleLazyObjectTestCase.test_repr_bound_method.MyLazyGenerator",
+              "django.utils.functional.SimpleLazyObject.__copy__",
+              "django.utils.functional.SimpleLazyObject.__deepcopy__",
+              "django.utils.functional.SimpleLazyObject.__init__",
+              "django.utils.functional.SimpleLazyObject.__radd__"
+            ]
+          },
+          {
+            "query": "JsonResponse",
+            "expected": "django.http.response.JsonResponse",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.http.response.JsonResponse",
+              "tests.httpwrappers.tests.JsonResponseTests",
+              "tests.view_tests.tests.test_json.JsonResponseTests",
+              "tests.view_tests.tests.test_json.JsonResponseTests.test_json_response",
+              "tests.httpwrappers.tests.JsonResponseTests.test_json_response_list",
+              "tests.httpwrappers.tests.JsonResponseTests.test_json_response_text",
+              "tests.httpwrappers.tests.JsonResponseTests.test_json_response_uuid",
+              "tests.httpwrappers.tests.JsonResponseTests.test_json_response_custom_encoder",
+              "tests.httpwrappers.tests.JsonResponseTests.test_json_response_non_ascii",
+              "tests.httpwrappers.tests.JsonResponseTests.test_json_response_passing_arguments_to_json_dumps"
+            ]
+          },
+          {
+            "query": "EmailMultiAlternatives",
+            "expected": "django.core.mail.message.EmailMultiAlternatives",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.core.mail.message.EmailMultiAlternatives",
+              "django.core.mail.message.EmailMultiAlternatives.__init__",
+              "django.core.mail.message.EmailMultiAlternatives._add_bodies",
+              "django.core.mail.message.EmailMultiAlternatives.attach_alternative",
+              "django.core.mail.message.EmailMultiAlternatives.body_contains"
+            ]
+          },
+          {
+            "query": "AdminEmailHandler",
+            "expected": "django.utils.log.AdminEmailHandler",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.utils.log.AdminEmailHandler",
+              "tests.logging_tests.tests.AdminEmailHandlerTest",
+              "tests.logging_tests.tests.AdminEmailHandlerTest.get_admin_email_handler",
+              "tests.logging_tests.tests.AdminEmailHandlerTest.test_error_when_subclass_defines_undocumented_connection_method.CustomAdminEmailHandler",
+              "tests.logging_tests.tests.AdminEmailHandlerTest.test_customize_send_mail_method.ManagerEmailHandler",
+              "django.utils.log.AdminEmailHandler.__init__",
+              "django.utils.log.AdminEmailHandler.emit",
+              "django.utils.log.AdminEmailHandler.format_subject",
+              "django.utils.log.AdminEmailHandler.send_mail",
+              "tests.logging_tests.tests.AdminEmailHandlerTest.make_log_record"
+            ]
+          },
+          {
+            "query": "LazySettings",
+            "expected": "django.conf.LazySettings",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.conf.LazySettings",
+              "tests.urlpatterns_reverse.tests.ReverseLazySettingsTest",
+              "tests.urlpatterns_reverse.tests.ReverseLazySettingsTest.test_lazy_in_settings",
+              "django.conf.LazySettings.__delattr__",
+              "django.conf.LazySettings.__dir__",
+              "django.conf.LazySettings.__getattr__",
+              "django.conf.LazySettings.__repr__",
+              "django.conf.LazySettings.__setattr__",
+              "django.conf.LazySettings._add_script_prefix",
+              "django.conf.LazySettings._setup"
+            ]
+          },
+          {
+            "query": "BasePaginator",
+            "expected": "django.core.paginator.BasePaginator",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.core.paginator.BasePaginator",
+              "django.core.paginator.BasePaginator.__init__",
+              "django.core.paginator.BasePaginator._check_object_list_is_ordered",
+              "django.core.paginator.BasePaginator._get_elided_page_range",
+              "django.core.paginator.BasePaginator._get_page",
+              "django.core.paginator.BasePaginator._validate_number"
+            ]
+          },
+          {
+            "query": "Urlizer",
+            "expected": "django.utils.html.Urlizer",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.utils.html.Urlizer",
+              "django.utils.html.Urlizer.__call__",
+              "django.utils.html.Urlizer.handle_word",
+              "django.utils.html.Urlizer.is_email_simple",
+              "django.utils.html.Urlizer.trailing_punctuation_chars_has_semicolon",
+              "django.utils.html.Urlizer.trailing_punctuation_chars_no_semicolon",
+              "django.utils.html.Urlizer.trim_punctuation",
+              "django.utils.html.Urlizer.trim_url",
+              "django.utils.html.Urlizer.wrapping_punctuation_openings"
+            ]
+          }
+        ],
+        "seconds": 34.480016125016846
+      },
+      "sqlalchemy": {
+        "counts": {
+          "version": 1,
+          "files_total": 669,
+          "files_done": 669,
+          "nodes": 40524,
+          "edges": 126105,
+          "degraded_reasons": []
+        },
+        "queries": [
+          {
+            "query": "noload",
+            "expected": "lib.sqlalchemy.orm.strategy_options.noload",
+            "repo": "sqlalchemy",
+            "slice": "staleness",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "lib.sqlalchemy.orm.strategy_options.noload",
+              "lib.sqlalchemy.orm.strategy_options._AbstractLoad.noload",
+              "lib.sqlalchemy.testing.assertions.expect_noload_deprecation",
+              "test.orm.test_dynamic._UOWTests.test_noload_add",
+              "test.orm.test_dynamic._UOWTests.test_noload_remove",
+              "test.orm.test_deprecations.DynamicTest.test_noload_issue",
+              "test.orm.test_deprecations.NoLoadTest.test_o2m_noload",
+              "test.orm.test_deprecations.WriteOnlyTest.test_noload_issue",
+              "test.orm.test_lazy_relations.M2OGetTest.test_m2o_noload",
+              "test.orm.test_deprecations.DefaultStrategyOptionsTest.test_noload_with_joinedload"
+            ]
+          },
+          {
+            "query": "tuples",
+            "expected": "lib.sqlalchemy.orm.query.RowReturningQuery.tuples",
+            "repo": "sqlalchemy",
+            "slice": "staleness",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "lib.sqlalchemy.orm.query.RowReturningQuery.tuples",
+              "lib.sqlalchemy.sql.cache_key.CacheKey._diff_tuples",
+              "lib.sqlalchemy.testing.suite.test_select.ValuesExpressionTest.test_tuples",
+              "lib.sqlalchemy.engine.result.Result.tuples",
+              "lib.sqlalchemy.orm.query.Query.tuples",
+              "lib.sqlalchemy.ext.asyncio.result.AsyncResult.tuples",
+              "lib.sqlalchemy.engine._result_cy.BaseResultInternal._raw_all_tuples",
+              "test.sql.test_resultset.AllTuplesTest",
+              "test.sql.test_resultset.CursorResultTest.test_result_tuples",
+              "lib.sqlalchemy.orm.descriptor_props.CompositeProperty.Comparator._bulk_update_tuples"
+            ]
+          },
+          {
+            "query": "MetaData",
+            "expected": "lib.sqlalchemy.sql.schema.MetaData",
+            "repo": "sqlalchemy",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "lib.sqlalchemy.sql.schema.MetaData",
+              "lib.sqlalchemy.engine.result.ResultMetaData",
+              "test.sql.test_metadata.MetaDataTest",
+              "lib.sqlalchemy.engine.result.SimpleResultMetaData",
+              "lib.sqlalchemy.engine.cursor.CursorResultMetaData",
+              "lib.sqlalchemy.engine.cursor._NoResultMetaData",
+              "test.sql.test_metadata.ToMetaDataTest",
+              "test.sql.test_deprecations.ToMetaDataTest",
+              "test.sql.test_metadata.UseExistingTest.empty_meta",
+              "test.sql.test_metadata.UseExistingTest.existing_meta"
+            ]
+          },
+          {
+            "query": "Session",
+            "expected": "lib.sqlalchemy.orm.session.Session",
+            "repo": "sqlalchemy",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "lib.sqlalchemy.orm.session.Session",
+              "lib.sqlalchemy.orm.dynamic._AppenderMixin.session",
+              "lib.sqlalchemy.orm.query.BulkUD.session",
+              "lib.sqlalchemy.orm.state.InstanceState.session",
+              "lib.sqlalchemy.testing.fixtures.orm.ORMTest.fixture_session",
+              "lib.sqlalchemy.testing.fixtures.orm.fixture_session",
+              "lib.sqlalchemy.orm.session.SessionTransaction",
+              "lib.sqlalchemy.orm.session._SessionClassMethods.object_session",
+              "lib.sqlalchemy.orm.session._state_session",
+              "lib.sqlalchemy.orm.session.object_session"
+            ]
+          },
+          {
+            "query": "create_engine",
+            "expected": "lib.sqlalchemy.engine.create.create_engine",
+            "repo": "sqlalchemy",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "lib.sqlalchemy.engine.create.create_engine",
+              "test.engine.test_parseconnect.URLTest.test_create_engine_url_invalid",
+              "test.engine.test_parseconnect.TestGetDialect.test_is_async_to_create_engine",
+              "test.ext.asyncio.test_engine.AsyncEngineTest.test_cant_use_async_pool_w_create_engine",
+              "lib.sqlalchemy.engine.create.create_engine.connect",
+              "lib.sqlalchemy.engine.create.create_engine.first_connect",
+              "lib.sqlalchemy.engine.create.create_engine.on_connect",
+              "lib.sqlalchemy.engine.create.create_engine.pop_kwarg",
+              "test.engine.test_parseconnect.TestGetDialect.test_is_async_to_create_engine.get_dialect_cls"
+            ]
+          }
+        ],
+        "seconds": 24.72577945800731
+      }
+    },
+    "codegraph": {
+      "django": {
+        "counts": {
+          "nodes": 61834,
+          "edges": 190332,
+          "relationships": 165091,
+          "files": 3009,
+          "unresolved_refs": 136122,
+          "rejected_edges": 11
+        },
+        "queries": [
+          {
+            "query": "StringAgg",
+            "expected": "django.db.models.aggregates.StringAgg",
+            "repo": "django",
+            "slice": "staleness",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.db.models.aggregates.StringAgg",
+              "django.db.models.aggregates.StringAggDelimiter",
+              "django.contrib.postgres.aggregates.general.StringAgg",
+              "tests.aggregation.tests.AggregateTestCase.test_distinct_on_stringagg",
+              "tests.aggregation.tests.AggregateTestCase.test_distinct_on_stringagg_sqlite_special_case",
+              "tests.aggregation.tests.AggregateTestCase.test_stringagg_default_value",
+              "django.db.models.aggregates.StringAgg.__init__",
+              "django.db.models.aggregates.StringAgg.as_mysql",
+              "django.db.models.aggregates.StringAgg.as_oracle",
+              "django.db.models.aggregates.StringAgg.as_sqlite"
+            ]
+          },
+          {
+            "query": "BitAnd",
+            "expected": "django.db.models.aggregates.BitAnd",
+            "repo": "django",
+            "slice": "staleness",
+            "rank": 2,
+            "rr_at_10": 0.5,
+            "top10": [
+              "django.db.backends.sqlite3._functions.BitAnd",
+              "django.db.models.aggregates.BitAnd",
+              "django.contrib.postgres.aggregates.general.BitAnd",
+              "django.db.models.expressions.Combinable.bitand",
+              "django.contrib.postgres.aggregates.general.BitAnd.__init__"
+            ]
+          },
+          {
+            "query": "BitOr",
+            "expected": "django.db.models.aggregates.BitOr",
+            "repo": "django",
+            "slice": "staleness",
+            "rank": 2,
+            "rr_at_10": 0.5,
+            "top10": [
+              "django.db.backends.sqlite3._functions.BitOr",
+              "django.db.models.aggregates.BitOr",
+              "django.contrib.postgres.aggregates.general.BitOr",
+              "django.db.models.expressions.Combinable.bitor",
+              "django.contrib.postgres.aggregates.general.BitOr.__init__"
+            ]
+          },
+          {
+            "query": "BitXor",
+            "expected": "django.db.models.aggregates.BitXor",
+            "repo": "django",
+            "slice": "staleness",
+            "rank": 2,
+            "rr_at_10": 0.5,
+            "top10": [
+              "django.db.backends.sqlite3._functions.BitXor",
+              "django.db.models.aggregates.BitXor",
+              "django.contrib.postgres.aggregates.general.BitXor",
+              "django.db.backends.sqlite3._functions._sqlite_bitxor",
+              "django.db.models.expressions.Combinable.bitxor",
+              "django.contrib.postgres.aggregates.general.BitXor.__init__"
+            ]
+          },
+          {
+            "query": "HttpResponseRedirect",
+            "expected": "django.http.response.HttpResponseRedirect",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.http.response.HttpResponseRedirect",
+              "django.http.response.HttpResponseRedirectBase",
+              "django.http.response.HttpResponseRedirectBase.__init__",
+              "django.http.response.HttpResponseRedirectBase.__repr__"
+            ]
+          },
+          {
+            "query": "SuspiciousOperation",
+            "expected": "django.core.exceptions.SuspiciousOperation",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.core.exceptions.SuspiciousOperation"
+            ]
+          },
+          {
+            "query": "FieldDoesNotExist",
+            "expected": "django.core.exceptions.FieldDoesNotExist",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.core.exceptions.FieldDoesNotExist"
+            ]
+          },
+          {
+            "query": "SimpleLazyObject",
+            "expected": "django.utils.functional.SimpleLazyObject",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.utils.functional.SimpleLazyObject",
+              "tests.utils_tests.test_lazyobject.SimpleLazyObjectTestCase",
+              "tests.utils_tests.test_lazyobject.SimpleLazyObjectPickleTestCase",
+              "tests.utils_tests.test_simplelazyobject.TestUtilsSimpleLazyObjectDjangoTestCase",
+              "tests.utils_tests.test_lazyobject.SimpleLazyObjectTestCase.lazy_wrap",
+              "tests.utils_tests.test_lazyobject.SimpleLazyObjectTestCase.test_repr_bound_method.MyLazyGenerator",
+              "django.utils.functional.SimpleLazyObject.__copy__",
+              "django.utils.functional.SimpleLazyObject.__deepcopy__",
+              "django.utils.functional.SimpleLazyObject.__init__",
+              "django.utils.functional.SimpleLazyObject.__radd__"
+            ]
+          },
+          {
+            "query": "JsonResponse",
+            "expected": "django.http.response.JsonResponse",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.http.response.JsonResponse",
+              "tests.httpwrappers.tests.JsonResponseTests",
+              "tests.view_tests.tests.test_json.JsonResponseTests",
+              "tests.view_tests.tests.test_json.JsonResponseTests.test_json_response",
+              "tests.httpwrappers.tests.JsonResponseTests.test_json_response_list",
+              "tests.httpwrappers.tests.JsonResponseTests.test_json_response_text",
+              "tests.httpwrappers.tests.JsonResponseTests.test_json_response_uuid",
+              "tests.httpwrappers.tests.JsonResponseTests.test_json_response_custom_encoder",
+              "tests.httpwrappers.tests.JsonResponseTests.test_json_response_non_ascii",
+              "tests.httpwrappers.tests.JsonResponseTests.test_json_response_passing_arguments_to_json_dumps"
+            ]
+          },
+          {
+            "query": "EmailMultiAlternatives",
+            "expected": "django.core.mail.message.EmailMultiAlternatives",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.core.mail.message.EmailMultiAlternatives",
+              "django.core.mail.message.EmailMultiAlternatives.attach_alternative",
+              "django.core.mail.message.EmailMultiAlternatives.body_contains",
+              "django.core.mail.message.EmailMultiAlternatives.__init__",
+              "django.core.mail.message.EmailMultiAlternatives._add_bodies"
+            ]
+          },
+          {
+            "query": "AdminEmailHandler",
+            "expected": "django.utils.log.AdminEmailHandler",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.utils.log.AdminEmailHandler",
+              "tests.logging_tests.tests.AdminEmailHandlerTest.get_admin_email_handler",
+              "tests.logging_tests.tests.AdminEmailHandlerTest",
+              "tests.logging_tests.tests.AdminEmailHandlerTest.test_error_when_subclass_defines_undocumented_connection_method.CustomAdminEmailHandler",
+              "tests.logging_tests.tests.AdminEmailHandlerTest.test_customize_send_mail_method.ManagerEmailHandler",
+              "django.utils.log.AdminEmailHandler.emit",
+              "django.utils.log.AdminEmailHandler.format_subject",
+              "django.utils.log.AdminEmailHandler.send_mail",
+              "django.utils.log.AdminEmailHandler.__init__",
+              "tests.logging_tests.tests.AdminEmailHandlerTest.make_log_record"
+            ]
+          },
+          {
+            "query": "LazySettings",
+            "expected": "django.conf.LazySettings",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.conf.LazySettings",
+              "tests.urlpatterns_reverse.tests.ReverseLazySettingsTest",
+              "tests.urlpatterns_reverse.tests.ReverseLazySettingsTest.test_lazy_in_settings",
+              "django.conf.LazySettings.configure",
+              "django.conf.LazySettings._setup",
+              "django.conf.LazySettings._add_script_prefix",
+              "django.conf.LazySettings.__delattr__",
+              "django.conf.LazySettings.__dir__",
+              "django.conf.LazySettings.__getattr__",
+              "django.conf.LazySettings.__repr__"
+            ]
+          },
+          {
+            "query": "BasePaginator",
+            "expected": "django.core.paginator.BasePaginator",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.core.paginator.BasePaginator",
+              "django.core.paginator.BasePaginator._check_object_list_is_ordered",
+              "django.core.paginator.BasePaginator._get_elided_page_range",
+              "django.core.paginator.BasePaginator._get_page",
+              "django.core.paginator.BasePaginator._validate_number",
+              "django.core.paginator.BasePaginator.__init__"
+            ]
+          },
+          {
+            "query": "Urlizer",
+            "expected": "django.utils.html.Urlizer",
+            "repo": "django",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "django.utils.html.Urlizer",
+              "django.utils.html.Urlizer.handle_word",
+              "django.utils.html.Urlizer.is_email_simple",
+              "django.utils.html.Urlizer.trim_punctuation",
+              "django.utils.html.Urlizer.trim_url",
+              "django.utils.html.Urlizer.__call__",
+              "django.utils.html.Urlizer.trailing_punctuation_chars_has_semicolon",
+              "django.utils.html.Urlizer.trailing_punctuation_chars_no_semicolon",
+              "django.utils.html.Urlizer.wrapping_punctuation_openings"
+            ]
+          }
+        ],
+        "seconds": 65.39732737501618
+      },
+      "sqlalchemy": {
+        "counts": {
+          "nodes": 60052,
+          "edges": 217183,
+          "relationships": 171122,
+          "files": 679,
+          "unresolved_refs": 118847,
+          "rejected_edges": 271
+        },
+        "queries": [
+          {
+            "query": "noload",
+            "expected": "lib.sqlalchemy.orm.strategy_options.noload",
+            "repo": "sqlalchemy",
+            "slice": "staleness",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "lib.sqlalchemy.orm.strategy_options.noload",
+              "lib.sqlalchemy.orm.strategy_options._AbstractLoad.noload",
+              "lib.sqlalchemy.testing.assertions.expect_noload_deprecation",
+              "test.orm.test_dynamic._UOWTests.test_noload_add",
+              "test.orm.test_dynamic._UOWTests.test_noload_remove",
+              "test.orm.test_deprecations.DynamicTest.test_noload_issue",
+              "test.orm.test_deprecations.NoLoadTest.test_o2m_noload",
+              "test.orm.test_deprecations.WriteOnlyTest.test_noload_issue",
+              "test.orm.test_lazy_relations.M2OGetTest.test_m2o_noload",
+              "test.orm.test_deprecations.DefaultStrategyOptionsTest.test_noload_with_joinedload"
+            ]
+          },
+          {
+            "query": "tuples",
+            "expected": "lib.sqlalchemy.orm.query.RowReturningQuery.tuples",
+            "repo": "sqlalchemy",
+            "slice": "staleness",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "lib.sqlalchemy.orm.query.RowReturningQuery.tuples",
+              "lib.sqlalchemy.sql.cache_key.CacheKey._diff_tuples",
+              "lib.sqlalchemy.testing.suite.test_select.ValuesExpressionTest.test_tuples",
+              "lib.sqlalchemy.engine.result.Result.tuples",
+              "lib.sqlalchemy.orm.query.Query.tuples",
+              "lib.sqlalchemy.ext.asyncio.result.AsyncResult.tuples",
+              "lib.sqlalchemy.engine._result_cy.BaseResultInternal._raw_all_tuples",
+              "test.sql.test_resultset.AllTuplesTest",
+              "test.sql.test_resultset.CursorResultTest.test_result_tuples",
+              "lib.sqlalchemy.orm.descriptor_props.CompositeProperty.Comparator._bulk_update_tuples"
+            ]
+          },
+          {
+            "query": "MetaData",
+            "expected": "lib.sqlalchemy.sql.schema.MetaData",
+            "repo": "sqlalchemy",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "lib.sqlalchemy.sql.schema.MetaData",
+              "lib.sqlalchemy.engine.result.ResultMetaData",
+              "test.sql.test_metadata.MetaDataTest",
+              "lib.sqlalchemy.engine.result.SimpleResultMetaData",
+              "lib.sqlalchemy.engine.cursor.CursorResultMetaData",
+              "lib.sqlalchemy.engine.cursor._NoResultMetaData",
+              "test.sql.test_metadata.ToMetaDataTest",
+              "test.sql.test_deprecations.ToMetaDataTest",
+              "test.sql.test_metadata.UseExistingTest.empty_meta",
+              "test.sql.test_metadata.UseExistingTest.existing_meta"
+            ]
+          },
+          {
+            "query": "Session",
+            "expected": "lib.sqlalchemy.orm.session.Session",
+            "repo": "sqlalchemy",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "lib.sqlalchemy.orm.session.Session",
+              "lib.sqlalchemy.orm.dynamic._AppenderMixin.session",
+              "lib.sqlalchemy.orm.query.BulkUD.session",
+              "method:b7f33bf62fe53403dbc5dad79f51b048",
+              "lib.sqlalchemy.orm.state.InstanceState.session",
+              "lib.sqlalchemy.testing.fixtures.orm.fixture_session",
+              "lib.sqlalchemy.testing.fixtures.orm.ORMTest.fixture_session",
+              "lib.sqlalchemy.orm.session.object_session",
+              "lib.sqlalchemy.orm.session._SessionClassMethods.object_session",
+              "lib.sqlalchemy.orm.session._state_session"
+            ]
+          },
+          {
+            "query": "create_engine",
+            "expected": "lib.sqlalchemy.engine.create.create_engine",
+            "repo": "sqlalchemy",
+            "slice": "general",
+            "rank": 1,
+            "rr_at_10": 1.0,
+            "top10": [
+              "lib.sqlalchemy.engine.create.create_engine",
+              "test.engine.test_parseconnect.URLTest.test_create_engine_url_invalid",
+              "test.engine.test_parseconnect.TestGetDialect.test_is_async_to_create_engine",
+              "test.ext.asyncio.test_engine.AsyncEngineTest.test_cant_use_async_pool_w_create_engine",
+              "lib.sqlalchemy.engine.create.create_engine.connect",
+              "lib.sqlalchemy.engine.create.create_engine.first_connect",
+              "lib.sqlalchemy.engine.create.create_engine.on_connect",
+              "lib.sqlalchemy.engine.create.create_engine.pop_kwarg",
+              "test.engine.test_parseconnect.TestGetDialect.test_is_async_to_create_engine.get_dialect_cls"
+            ]
+          }
+        ],
+        "seconds": 53.185665583005175
+      }
+    }
+  },
+  "corpus_shas": {
+    "django": "318a316a4c86a65bede68144f9546a6056d91379",
+    "sqlalchemy": "12f32306476d865fb8ceede0b43dbc88ba52ac46"
+  },
+  "native_ranks_unchanged": true,
+  "mrr_at_10": {
+    "baseline_native": {
+      "django": 0.8928571428571429,
+      "sqlalchemy": 1.0
+    },
+    "current_native": {
+      "django": 0.8928571428571429,
+      "sqlalchemy": 1.0
+    },
+    "codegraph": {
+      "django": 0.8928571428571429,
+      "sqlalchemy": 1.0
+    }
+  },
+  "harness_sha256": "5724715ce6e96426df7947d69aecd70b734a69532cf21f0017c84cd2008e524f",
+  "source_sha256_after_run": {
+    "src/chgraph/__init__.py": "91447944015cec709e8aa7655f7e9d64e1e4508e7023a57fe3746911c0fc6fed",
+    "src/chgraph/cli.py": "065444bd0dad4f35cc5ed8e7260771ce5f4fcde1337edb107389cb9234223a70",
+    "src/chgraph/client.py": "d5a7fc3d83cd6e553569585e142fa4e3534931f6df076a2ad03ee95f7b57f3de",
+    "src/chgraph/codegraph_import.py": "6dbd780b114c886591d306f740ac840c91774c43045534a9aebfb93b07364a32",
+    "src/chgraph/context.py": "84ad421a1dcfcb4f3c71ce0461e6c4c96e6774541214287b6a0494e7be6969af",
+    "src/chgraph/daemon.py": "e28cceabea9b76331a41a689f940a926b071e39fd56a05338369e365330d212f",
+    "src/chgraph/embeddings.py": "b0c6143d5ea3dd005b6071e6dbb7cee05a0827c626eadfe1efa768637b1e21d1",
+    "src/chgraph/evolution.py": "10cba780394ed63fb06d0f296b0da1f56d65e34c7faa9b7a6d077572fded4305",
+    "src/chgraph/generations.py": "0abae8c6fcae8a379a225636e0426479e0d7d13553f53e4b2f7a7e76b5bd1034",
+    "src/chgraph/gitingest.py": "2e9cfdab06c8d3bbc4c90a03d9e8cac8deb519bcb24e43c6d8d22e06aa510622",
+    "src/chgraph/indexer.py": "2854c0c7ec5fea515e1ede54083fe5546724a8aa5a17b7709b371604e8b5f1f5",
+    "src/chgraph/parse_python.py": "2999dcaace3c5d8ce46d6bad53aa78a487c14c840752249b679288088acc91c7",
+    "src/chgraph/paths.py": "fc8c8402264af4dfd5b7b2399eae2991bdb623016fb9138f2472f17dc306421e",
+    "src/chgraph/schema.py": "981f4e8cb1669e0b5055a3521509d90117cb00ece8dcf09de0b132cbb92efabf",
+    "src/chgraph/search.py": "001a7aac5221683248dbe0246ba28574e4bc624bfe3b9b1ad71db1c7dd6d433e",
+    "src/chgraph/shim.py": "c717c6078b9beb65a244270b3d0093136605d58439090ffbdef42a44ccc9350f",
+    "src/chgraph/status.py": "1e9d1d8e27438278eb83fe92aedf96fbb0fdf69894c01d31f2e53f06e700be44",
+    "src/chgraph/store.py": "50247b5903398efc5e36723930d89790d14c0823e2c8b513c157830a860d1683",
+    "src/chgraph/text.py": "8c145942d9c350ba73aee878769283e23b6cebc3b45253b441afe6cc1d21b444",
+    "src/chgraph/traverse.py": "d06ac659d27716899c71af056761ade81bd381dbe9bf9adc5479cce45ef8978e"
+  },
+  "limitations": [
+    "Exact-symbol ranking only; no paid agent answer-quality or token-cost evaluation.",
+    "Single-pass timings are diagnostic, not performance superiority evidence.",
+    "Freshness and Python generic review fixes are included in this source fingerprint."
+  ]
+}

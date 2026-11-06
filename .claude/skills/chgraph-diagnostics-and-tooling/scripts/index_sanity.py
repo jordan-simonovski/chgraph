@@ -77,6 +77,12 @@ def count_nodes(data_dir, project):
             sys.exit(f"LOCKED (probably): could not open {data_dir}. "
                      "Run scripts/check_lock.sh; stop the owner or copy the dir.")
         raise
+    from chgraph.generations import active_project
+    from chgraph.store import Store
+
+    exists = sess.query("EXISTS TABLE chgraph.meta", "JSON")
+    if json.loads(exists.data())["data"][0]["result"]:
+        project = active_project(Store(sess), project)
     p = project.replace("'", "\\'")
     res = sess.query(
         f"SELECT count() AS c FROM chgraph.nodes FINAL WHERE project = '{p}'",
@@ -93,12 +99,14 @@ def main():
     ap.add_argument("repo", help="path to the source repository")
     ap.add_argument("data_dir", help="chdb data directory path")
     ap.add_argument("--project", default=None,
-                    help="project name in the graph (default: repo basename)")
+                    help="logical or physical project name (default: repository project id)")
     args = ap.parse_args()
 
     if not os.path.isdir(args.repo):
         sys.exit(f"repo path is not a directory: {args.repo}")
-    project = args.project or os.path.basename(os.path.abspath(args.repo))
+    from chgraph.paths import project_slug
+
+    project = args.project or project_slug(args.repo)
 
     files, loc = count_loc(args.repo)
     nodes = count_nodes(args.data_dir, project)

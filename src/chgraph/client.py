@@ -13,6 +13,13 @@ class DaemonClient:
     def __init__(self, socket_path: Path):
         self.socket_path = Path(socket_path)
 
+    def index(self, source: str = "native") -> dict:
+        if source not in ("native", "codegraph"):
+            raise DaemonError("source must be native|codegraph")
+        if source == "codegraph" and source not in self.call("ping").get("index_sources", []):
+            raise DaemonError("running daemon lacks CodeGraph support; restart it with chgraph daemon restart")
+        return self.call("index", source=source)
+
     def call(self, op: str, **params) -> dict:
         try:
             with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:

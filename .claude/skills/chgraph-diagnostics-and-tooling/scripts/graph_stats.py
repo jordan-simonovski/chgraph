@@ -77,6 +77,10 @@ def main():
     if missing:
         sys.exit(f"missing table(s) in database chgraph: {sorted(missing)} — "
                  "is this a chgraph data dir?")
+    if "meta" in tables:
+        pointer = q(sess, "SELECT value FROM chgraph.meta FINAL WHERE key='active_project'")
+        if pointer:
+            print("published generation: " + json.loads(pointer[0]["value"])["project"])
 
     # Raw vs FINAL: divergence = duplicate-key rows awaiting merge. Harmless
     # unless it grows without bound (see SKILL.md interpretation guide).

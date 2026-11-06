@@ -15,9 +15,13 @@ from pathlib import Path
 
 from chgraph import search as search_mod
 from chgraph import traverse as traverse_mod
-from chgraph.evolution import _q
-from chgraph.indexer import index_repository
-from chgraph.paths import ProjectPaths, project_slug
+from chgraph import context as context_mod
+from chgraph.codegraph_import import prepare_codegraph, write_snapshot
+from chgraph.evolution import _q, refresh_file_evolution
+from chgraph.generations import active_project, publish_generation
+from chgraph.gitingest import GitIngestCounts, _batch_load, parse_git_log, verify_git_counts
+from chgraph.indexer import IndexResult, index_repository
+from chgraph.paths import ProjectPaths, project_slug, read_source
 from chgraph.status import read_status, write_status
 from chgraph.store import Store
 
@@ -108,40 +112,80 @@ class Daemon:
         self.worker.wait_ready()
         self._index_thread: threading.Thread | None = None
         self._index_lock = threading.Lock()
+        self._index_cancel = threading.Event()
         self._stop = asyncio.Event()
 
     # ---- index job (runs in its own thread; only DB calls go through the worker) ----
-    def _index_job(self, job_id: str):
+    def _index_job(self, job_id: str, source: str):
         sp = self.paths.status_json
         try:
             write_status(sp, state="running", repo_root=self.repo_root, job_id=job_id,
                          files_total=0, files_done=0, nodes_persisted=0,
-                         degraded_reasons=[], error=None)
+                         degraded_reasons=[], error=None, source=source, experimental=source == "codegraph")
 
             def progress(done, total):
                 write_status(sp, state="running", repo_root=self.repo_root, job_id=job_id,
                              files_total=total, files_done=done, nodes_persisted=0,
-                             degraded_reasons=[], error=None)
+                             degraded_reasons=[], error=None, source=source, experimental=source == "codegraph")
 
-            res = self.worker.submit(
-                lambda st: index_repository(st, self.project, self.repo_root, progress)
-            ).result()
+            generation = f"{self.project}@{uuid.uuid4().hex}"
+            rejected = 0
+            if source == "codegraph":
+                # Extraction and source validation leave the database worker free for reads.
+                snapshot = prepare_codegraph(self.repo_root, cancel=self._index_cancel)
+                commits, changes = parse_git_log(self.repo_root, generation)
+                if self._index_cancel.is_set():
+                    raise ValueError("indexing cancelled during shutdown")
+                counts = GitIngestCounts(len(commits), len(changes), sum(c["is_rename"] for c in changes))
+                reasons = verify_git_counts(self.repo_root, counts)
+                rejected = len(snapshot["rejected_edges"])
+                if rejected:
+                    reasons.append(f"quarantined {rejected} unsafe/unverified Python CALLS records; evidence retained")
+                reasons.extend(f"{path}: {message}" for path, message in snapshot["validation_errors"].items())
+
+                def load(st):
+                    loaded = write_snapshot(st, generation, snapshot)
+                    _batch_load(st, "chgraph.git_commits", commits)
+                    _batch_load(st, "chgraph.git_file_changes", changes)
+                    refresh_file_evolution(st, generation, 1)
+                    for table, expected in (("nodes", loaded["nodes"]), ("edges", loaded["relationships"])):
+                        actual = st.rows(f"SELECT count() AS n FROM chgraph.{table} FINAL WHERE project={_q(generation)}")[0]["n"]
+                        if actual != expected:
+                            raise ValueError(f"incomplete {table}: persisted {actual}, expected {expected}")
+                    reasons.extend(publish_generation(st, self.project, generation, source))
+                    return IndexResult(1, loaded["files"], loaded["files"], loaded["nodes"],
+                                       loaded["relationships"], reasons)
+
+                res = self.worker.submit(load).result()
+            else:
+                def load(st):
+                    result = index_repository(st, generation, self.repo_root, progress)
+                    result.degraded_reasons.extend(publish_generation(st, self.project, generation, source))
+                    return result
+
+                res = self.worker.submit(load).result()
             state = "degraded" if res.degraded_reasons else "indexed"
             write_status(sp, state=state, repo_root=self.repo_root, job_id=job_id,
                          files_total=res.files_total, files_done=res.files_done,
                          nodes_persisted=res.nodes, degraded_reasons=res.degraded_reasons,
-                         error=None)
+                         error=None, source=source, experimental=source == "codegraph",
+                         generation=generation, rejected_edges=rejected)
         except Exception as e:                          # noqa: BLE001
             log.exception("index job failed")
             write_status(sp, state="failed", repo_root=self.repo_root, job_id=job_id,
                          files_total=0, files_done=0, nodes_persisted=0,
-                         degraded_reasons=[], error=str(e))
+                         degraded_reasons=[], error=str(e), source=source, experimental=source == "codegraph")
 
     # ---- ops ----
     def op_ping(self, **_):
-        return {"pong": True, "project": self.project, "pid": os.getpid()}
+        return {"pong": True, "project": self.project, "pid": os.getpid(),
+                "index_sources": ["native", "codegraph"]}
 
-    def op_index(self, **_):
+    def op_index(self, source: str = "native", **_):
+        if source not in ("native", "codegraph"):
+            raise ValueError("source must be native|codegraph")
+        if self._stop.is_set():
+            raise ValueError("daemon is shutting down")
         # Handlers run in the executor pool, so two concurrent "index" requests can
         # both observe is_alive() == False before either starts a thread. Hold the
         # lock across the check AND the thread creation/start so only one index job
@@ -151,10 +195,11 @@ class Daemon:
                 return {"job_id": read_status(self.paths.status_json).get("job_id"),
                         "state": "running"}
             job_id = f"idx-{uuid.uuid4().hex[:8]}"
+            self._index_cancel.clear()
             write_status(self.paths.status_json, state="queued", repo_root=self.repo_root,
                          job_id=job_id, files_total=0, files_done=0, nodes_persisted=0,
-                         degraded_reasons=[], error=None)
-            self._index_thread = threading.Thread(target=self._index_job, args=(job_id,), daemon=True)
+                         degraded_reasons=[], error=None, source=source, experimental=source == "codegraph")
+            self._index_thread = threading.Thread(target=self._index_job, args=(job_id, source), daemon=True)
             self._index_thread.start()
         return {"job_id": job_id, "state": "queued"}
 
@@ -163,33 +208,50 @@ class Daemon:
 
     def op_search(self, **params):
         page = self.worker.submit(
-            lambda st: search_mod.search_graph(st, self.project, **params)).result()
+            lambda st: search_mod.search_graph(st, active_project(st, self.project), **params)).result()
         return dataclasses.asdict(page)
 
     def op_snippet(self, qualified_name: str, **_):
         row = self.worker.submit(lambda st: st.rows(
-            f"SELECT file_path, start_line, end_line FROM chgraph.nodes FINAL "
-            f"WHERE project = {_q(self.project)} AND qualified_name = {_q(qualified_name)}"
+            f"SELECT file_path, start_line, end_line, properties FROM chgraph.nodes FINAL "
+            f"WHERE project = {_q(active_project(st, self.project))} AND qualified_name = {_q(qualified_name)}"
         )).result()
         if not row:
             raise ValueError(f"unknown symbol: {qualified_name}")
         r = row[0]
-        lines = open(os.path.join(self.repo_root, r["file_path"]), errors="replace").read().splitlines()
+        import hashlib
+
+        source = read_source(self.repo_root, r["file_path"])
+        expected = json.loads(r["properties"]).get("content_hash")
+        if expected and hashlib.sha256(source).hexdigest() != expected:
+            raise ValueError(f"stale source: {r['file_path']}; reindex before requesting snippets")
+        lines = source.decode(errors="replace").splitlines()
         text = "\n".join(lines[r["start_line"] - 1:r["end_line"]])
         return {"qualified_name": qualified_name, "file_path": r["file_path"],
                 "start_line": r["start_line"], "end_line": r["end_line"], "text": text}
 
     def op_trace(self, qualified_name: str, direction: str = "callees", depth: int = 5, **_):
         rows = self.worker.submit(lambda st: traverse_mod.trace_path(
-            st, self.project, qualified_name, direction=direction, depth=depth)).result()
+            st, active_project(st, self.project), qualified_name, direction=direction, depth=depth)).result()
         return {"paths": rows}
+
+    def op_explore(self, query: str, max_chars: int = 12000, max_nodes: int = 30, depth: int = 2, **_):
+        return self.worker.submit(lambda st: context_mod.explore(
+            st, active_project(st, self.project), self.repo_root, query,
+            max_chars=max_chars, max_nodes=max_nodes, depth=depth)).result()
+
+    def op_impact(self, qualified_name: str, depth: int = 5, max_nodes: int = 100, **_):
+        return self.worker.submit(lambda st: context_mod.impact(
+            st, active_project(st, self.project), qualified_name, depth=depth, max_nodes=max_nodes,
+            repo_root=self.repo_root)).result()
 
     def op_schema_info(self, **_):
         def q(st):
+            project = active_project(st, self.project)
             labels = [r["label"] for r in st.rows(
-                f"SELECT DISTINCT label FROM chgraph.nodes FINAL WHERE project = {_q(self.project)} ORDER BY label")]
+                f"SELECT DISTINCT label FROM chgraph.nodes FINAL WHERE project = {_q(project)} ORDER BY label")]
             etypes = [r["type"] for r in st.rows(
-                f"SELECT DISTINCT type FROM chgraph.edges FINAL WHERE project = {_q(self.project)} ORDER BY type")]
+                f"SELECT DISTINCT type FROM chgraph.edges FINAL WHERE project = {_q(project)} ORDER BY type")]
             return {"labels": labels, "edge_types": etypes}
         return self.worker.submit(q).result()
 
@@ -209,6 +271,7 @@ class Daemon:
                 for t in ("nodes", "edges", "git_commits", "git_file_changes",
                           "file_evolution", "embeddings"):
                     st.exec(f"TRUNCATE TABLE chgraph.{t}")
+                st.delete_rows("chgraph.meta", "key != 'schema_version'")
             self.worker.submit(wipe).result()
             write_status(self.paths.status_json, state="uninitialized", repo_root=self.repo_root,
                          job_id=None, files_total=0, files_done=0, nodes_persisted=0,
@@ -275,6 +338,9 @@ class Daemon:
             async with server:
                 await self._stop.wait()
         finally:
+            self._index_cancel.set()
+            if self._index_thread:
+                self._index_thread.join(timeout=5)
             # A crash here must never leave a stale socket/pidfile behind a held
             # chdb dir lock (chgraph-run-and-operate §2), so both the worker
             # shutdown and the unlink below run unconditionally.

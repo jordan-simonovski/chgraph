@@ -1,0 +1,205 @@
+{
+  "native": {
+    "expected_calls": 7,
+    "missing_calls": [
+      [
+        "src/fixture_pkg/api.py::entry",
+        "src/fixture_pkg/helpers.py::target"
+      ],
+      [
+        "src/fixture_pkg/api.py::Service.run",
+        "src/fixture_pkg/api.py::Service.finish"
+      ],
+      [
+        "src/fixture_pkg/api.py::Service.finish",
+        "src/fixture_pkg/helpers.py::target"
+      ],
+      [
+        "src/fixture_pkg/api.py::choose",
+        "src/fixture_pkg/helpers.py::duplicate"
+      ],
+      [
+        "src/fixture_pkg/consumer.py::unchanged",
+        "src/fixture_pkg/helpers.py::target"
+      ]
+    ],
+    "false_calls": [],
+    "unexpected_calls": [],
+    "passed": false,
+    "unresolved_call_targets": [
+      ".helpers.target",
+      "fixture_pkg.helpers.duplicate",
+      "fixture_pkg.helpers.target",
+      "fixture_pkg.target"
+    ]
+  },
+  "codegraph": {
+    "counts": {
+      "nodes": 27,
+      "edges": 45,
+      "relationships": 38,
+      "files": 5,
+      "unresolved_refs": 6
+    },
+    "quality": {
+      "expected_calls": 7,
+      "missing_calls": [],
+      "false_calls": [],
+      "unexpected_calls": [],
+      "passed": true,
+      "missing_references": []
+    },
+    "raw_quality": {
+      "expected_calls": 7,
+      "missing_calls": [],
+      "false_calls": [
+        [
+          "src/fixture_pkg/api.py::shadowed",
+          "src/fixture_pkg/helpers.py::target"
+        ]
+      ],
+      "unexpected_calls": [
+        [
+          "src/fixture_pkg/api.py::shadowed",
+          "src/fixture_pkg/helpers.py::target"
+        ]
+      ],
+      "passed": false
+    },
+    "rejected_edges": 1,
+    "lossless_import": true,
+    "overload_lookup": [
+      "src.fixture_pkg.helpers.convert"
+    ],
+    "traversal_matches": true,
+    "producer": {
+      "indexed_at_commit": "38c5895d264266d410a671ac4a575fbbd556c8f1",
+      "indexed_dirty_paths": "{\"commit\":\"38c5895d264266d410a671ac4a575fbbd556c8f1\",\"paths\":[]}",
+      "index_state": "complete",
+      "indexed_with_version": "1.6.2",
+      "indexed_with_extraction_version": "27",
+      "index_files_discovered": "5",
+      "index_files_accounted": "5"
+    }
+  },
+  "after_sync": {
+    "counts": {
+      "nodes": 27,
+      "edges": 45,
+      "relationships": 38,
+      "files": 5,
+      "unresolved_refs": 6
+    },
+    "quality": {
+      "expected_calls": 7,
+      "missing_calls": [],
+      "false_calls": [],
+      "unexpected_calls": [],
+      "passed": true,
+      "missing_references": []
+    },
+    "raw_quality": {
+      "expected_calls": 7,
+      "missing_calls": [],
+      "false_calls": [
+        [
+          "src/fixture_pkg/api.py::shadowed",
+          "src/fixture_pkg/helpers.py::renamed"
+        ]
+      ],
+      "unexpected_calls": [
+        [
+          "src/fixture_pkg/api.py::shadowed",
+          "src/fixture_pkg/helpers.py::renamed"
+        ]
+      ],
+      "passed": false
+    },
+    "rejected_edges": 1,
+    "lossless_import": true,
+    "overload_lookup": [
+      "src.fixture_pkg.helpers.convert"
+    ],
+    "traversal_matches": true,
+    "producer": {
+      "indexed_at_commit": "38c5895d264266d410a671ac4a575fbbd556c8f1",
+      "indexed_dirty_paths": "{\"commit\":\"38c5895d264266d410a671ac4a575fbbd556c8f1\",\"paths\":[\"src/fixture_pkg/__init__.py\",\"src/fixture_pkg/api.py\",\"src/fixture_pkg/helpers.py\"]}",
+      "index_state": "complete",
+      "indexed_with_version": "1.6.2",
+      "indexed_with_extraction_version": "27",
+      "index_files_discovered": "5",
+      "index_files_accounted": "5",
+      "synthesis_pending": "0"
+    }
+  },
+  "after_rebuild": {
+    "counts": {
+      "nodes": 27,
+      "edges": 45,
+      "relationships": 38,
+      "files": 5,
+      "unresolved_refs": 6
+    },
+    "quality": {
+      "expected_calls": 7,
+      "missing_calls": [],
+      "false_calls": [],
+      "unexpected_calls": [],
+      "passed": true,
+      "missing_references": []
+    },
+    "raw_quality": {
+      "expected_calls": 7,
+      "missing_calls": [],
+      "false_calls": [
+        [
+          "src/fixture_pkg/api.py::shadowed",
+          "src/fixture_pkg/helpers.py::renamed"
+        ]
+      ],
+      "unexpected_calls": [
+        [
+          "src/fixture_pkg/api.py::shadowed",
+          "src/fixture_pkg/helpers.py::renamed"
+        ]
+      ],
+      "passed": false
+    },
+    "rejected_edges": 1,
+    "lossless_import": true,
+    "overload_lookup": [
+      "src.fixture_pkg.helpers.convert"
+    ],
+    "traversal_matches": true,
+    "producer": {
+      "indexed_at_commit": "38c5895d264266d410a671ac4a575fbbd556c8f1",
+      "indexed_dirty_paths": "{\"commit\":\"38c5895d264266d410a671ac4a575fbbd556c8f1\",\"paths\":[\"src/fixture_pkg/__init__.py\",\"src/fixture_pkg/api.py\",\"src/fixture_pkg/helpers.py\"]}",
+      "index_state": "complete",
+      "indexed_with_version": "1.6.2",
+      "indexed_with_extraction_version": "27",
+      "index_files_discovered": "5",
+      "index_files_accounted": "5"
+    }
+  },
+  "sync_matches_rebuild": true,
+  "sync_only": {
+    "edges": [],
+    "nodes": [],
+    "files": [],
+    "unresolved_refs": []
+  },
+  "rebuild_only": {
+    "edges": [],
+    "nodes": [],
+    "files": [],
+    "unresolved_refs": []
+  },
+  "fixture_gate_passed": true,
+  "fixture_sha256": {
+    "tests/fixtures/codegraph/src/fixture_pkg/__init__.py": "e70b1552507d0d61a9cd6a478813b99a0fdc8e9fb43836eedf4ad06e55a99ca3",
+    "tests/fixtures/codegraph/src/fixture_pkg/api.py": "deb6028c8a159e88c69c2f1bec0bc857dc4ddb2434e70aeb5e4e98c6b5e6fb59",
+    "tests/fixtures/codegraph/src/fixture_pkg/consumer.py": "eddd4f8fff24442b87af026af37450c00f6f44e3312544886e65c1a65b393759",
+    "tests/fixtures/codegraph/src/fixture_pkg/helpers.py": "95b375a1aa6b9acc68578f07d18ec3ef9cee13dde7fe12139e9e207ab146df4b",
+    "tests/fixtures/codegraph/src/fixture_pkg/other.py": "ba0c035d3dcd01c22642a6624a024c9ba21df6ebe42f30af906ddb0a2ddf659d"
+  }
+}

@@ -1,5 +1,6 @@
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -7,7 +8,7 @@ import pytest
 
 
 @pytest.fixture
-def mcp_data_dir():
+def mcp_data_dir(synth_repo):
     # Short, unique, per-process data dir directly under /tmp (not pytest's
     # tmp_path, which nests deep enough that daemon.sock overflows AF_UNIX's
     # ~104-byte sockaddr_un limit on macOS once CHGRAPH_DATA_DIR/<slug>/ is
@@ -15,6 +16,9 @@ def mcp_data_dir():
     # and tests/chdb/test_cli.py's `cli_data_dir` fixture.
     data_dir = tempfile.mkdtemp(dir="/tmp", prefix=f"cgmcp{os.getpid()}-")
     yield data_dir
+    subprocess.run([sys.executable, "-m", "chgraph.cli", "daemon", "stop", str(synth_repo)],
+                   env={**os.environ, "CHGRAPH_DATA_DIR": data_dir},
+                   capture_output=True, timeout=15)
     shutil.rmtree(data_dir, ignore_errors=True)
 
 
@@ -34,7 +38,8 @@ async def test_shim_lists_tier1_tools_and_indexes(mcp_data_dir, synth_repo, monk
             await session.initialize()
             tools = {t.name for t in (await session.list_tools()).tools}
             assert {"index_repository", "index_status", "search_graph", "get_code_snippet",
-                    "trace_path", "get_graph_schema", "list_projects", "delete_project"} <= tools
+                    "trace_path", "get_graph_schema", "list_projects", "delete_project",
+                    "explore", "change_impact"} <= tools
             assert "query_graph" not in tools          # OPEN semantics — not stubbed
 
             r = await session.call_tool("index_repository", {})
@@ -83,6 +88,13 @@ async def test_shim_lists_tier1_tools_and_indexes(mcp_data_dir, synth_repo, monk
             traced = await session.call_tool(
                 "trace_path", {"function_name": item["qualified_name"]})
             assert isinstance(traced.structuredContent["paths"], list)
+
+            context = await session.call_tool("explore", {"query": "handle", "max_chars": 1000})
+            assert not context.isError, context.content
+            assert len(context.structuredContent["context"]) <= 1000
+            assert "def handle" in context.structuredContent["context"]
+            impact = await session.call_tool("change_impact", {"qualified_name": item["qualified_name"]})
+            assert impact.structuredContent["affected"]
 
             # delete_project wipes the graph -- must run LAST.
             deleted = await session.call_tool("delete_project", {})

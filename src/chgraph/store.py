@@ -1,5 +1,6 @@
 """Store: sole owner of the chdb Session in a process (INV-1)."""
 import json
+import time
 from pathlib import Path
 
 import chdb.session as chs
@@ -56,6 +57,26 @@ class Store:
     def checkpoint(self) -> None:
         if self._durable:
             self._sess.checkpoint()
+
+    def delete_rows(self, table: str, condition: str) -> None:
+        if not self.rows(f"SELECT 1 FROM {table} WHERE {condition} LIMIT 1"):
+            return
+        sql = f"ALTER TABLE {table} DELETE WHERE {condition}"
+        if not self._durable:
+            self.exec(sql + " SETTINGS mutations_sync=2")
+            return
+        # Durable rejects query settings; wait for its logged mutation through read-only SQL.
+        self.exec(sql)
+        deadline = time.monotonic() + 60
+        while pending := self.rows(
+            "SELECT latest_fail_reason FROM system.mutations WHERE database='chgraph' "
+            f"AND table='{table.removeprefix('chgraph.')}' AND NOT is_done"
+        ):
+            if any(row["latest_fail_reason"] for row in pending):
+                raise RuntimeError(f"delete mutation failed: {pending}")
+            if time.monotonic() >= deadline:
+                raise TimeoutError(f"delete mutation did not finish: {table}")
+            time.sleep(0.01)
 
     def rows(self, sql: str) -> list[dict]:
         out = self._sess.query(sql, "JSONEachRow").bytes().decode()

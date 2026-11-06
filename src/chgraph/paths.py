@@ -2,8 +2,33 @@
 import hashlib
 import os
 import re
+import stat
 from dataclasses import dataclass
 from pathlib import Path
+
+MAX_SOURCE_BYTES = 4 * 1024 * 1024
+
+
+def source_path(repo_root: str | Path, relative: str) -> Path:
+    root = Path(repo_root).resolve()
+    path = (root / relative).resolve()
+    if not path.is_relative_to(root):
+        raise ValueError(f"source path escapes repository: {relative}")
+    return path
+
+
+def read_source(repo_root: str | Path, relative: str, *, max_bytes=MAX_SOURCE_BYTES) -> bytes:
+    fd = os.open(source_path(repo_root, relative), os.O_RDONLY | os.O_NONBLOCK)
+    with os.fdopen(fd, "rb") as source:
+        info = os.fstat(source.fileno())
+        if not stat.S_ISREG(info.st_mode):
+            raise ValueError(f"source is not a regular file: {relative}")
+        if info.st_size > max_bytes:
+            raise ValueError(f"source exceeds read limit: {relative}")
+        content = source.read(max_bytes + 1)
+        if len(content) > max_bytes:
+            raise ValueError(f"source exceeds read limit: {relative}")
+        return content
 
 
 def project_slug(repo_root: str) -> str:
