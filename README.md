@@ -79,6 +79,10 @@ Full design rationale, invariants, and the honest weak-points register live in
 `.claude/skills/` (start with `chgraph-architecture-contract` and
 `chgraph-run-and-operate`).
 
+The [CodeGraph integration](docs/experiments/codegraph-import.md) provides an
+experimental extraction source plus bounded `explore` and `change_impact` MCP
+tools. See that guide for setup, verification and limitations.
+
 ## Use with Claude Code
 
 Add to `.mcp.json` in your project (use an **absolute** path — MCP clients spawn

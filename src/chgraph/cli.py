@@ -99,6 +99,8 @@ def main() -> None:
     pd.add_argument("repo", nargs="?")
     pi = sub.add_parser("index")
     pi.add_argument("repo", nargs="?")
+    pi.add_argument("--source", choices=("native", "codegraph"), default="native",
+                    help="extractor (codegraph is experimental and requires the CodeGraph CLI)")
     ps = sub.add_parser("status")
     ps.add_argument("repo", nargs="?")
     pm = sub.add_parser("mcp")
@@ -116,7 +118,11 @@ def main() -> None:
         repo = _repo(args.repo)
         if daemon_start(repo) != 0:
             raise SystemExit(1)
-        job = DaemonClient(ProjectPaths.for_repo(repo).socket).call("index")
+        try:
+            job = DaemonClient(ProjectPaths.for_repo(repo).socket).index(source=args.source)
+        except DaemonError as exc:
+            print(str(exc), file=sys.stderr)
+            raise SystemExit(1)
         print(f"queued {job['job_id']}; poll with `chgraph status`")
         raise SystemExit(0)
     if args.cmd == "status":

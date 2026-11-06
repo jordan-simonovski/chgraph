@@ -2,7 +2,9 @@
 CALLS edges are emitted ONLY when the callee resolves to a same-module def or an
 explicit `from X import name` binding — unresolvable calls are dropped, not guessed
 (the reference tool's false-CALLS bugs are the cautionary tale, code-graph-reference)."""
+import ast
 import json
+import symtable
 import re
 
 import tree_sitter_python as tspython
@@ -257,3 +259,158 @@ def parse_file(rel_path: str, source: bytes) -> tuple[list[dict], list[dict]]:
 
     walk_calls(tree.root_node, module)
     return nodes, edges
+
+
+def _shadowed_parameter_calls(source: bytes) -> set[tuple[int, int]]:
+    """Locate bare calls bound to parameters, including captured closure parameters."""
+    scopes = [symtable.symtable(source, "<indexed source>", "exec")]
+    bindings = [(scopes[0], set())]
+    used = set()
+    rejected = set()
+    tree = ast.parse(source)
+    postponed = any(isinstance(n, ast.ImportFrom) and n.module == "__future__"
+                    and any(a.name == "annotations" for a in n.names) for n in tree.body)
+
+    class Calls(ast.NodeVisitor):
+        def scoped(self, node, name, body):
+            children = scopes[-1].get_children()
+            while True:
+                table = next((t for t in children if t.get_name() == name
+                              and t.get_lineno() == node.lineno and t.get_id() not in used), None)
+                if table is None:
+                    raise ValueError(f"unmatched Python binding scope: {name} at line {node.lineno}")
+                used.add(table.get_id())
+                if table.get_type() in ("function", "class"):
+                    break
+                children = table.get_children()  # Generic definitions have a type-parameter wrapper.
+            scopes.append(table)
+            bindings.append((table, set()))
+            for child in body:
+                self.visit(child)
+            scopes.pop()
+            bindings.pop()
+
+        def visit_FunctionDef(self, node):
+            annotations = [] if postponed else [node.args, *([node.returns] if node.returns else [])]
+            defaults = [*node.args.defaults, *(n for n in node.args.kw_defaults if n is not None)] if postponed else []
+            for child in [*annotations, *defaults, *node.decorator_list]:
+                self.visit(child)
+            self.scoped(node, node.name, node.body)
+
+        visit_AsyncFunctionDef = visit_FunctionDef
+
+        def visit_AnnAssign(self, node):
+            self.visit(node.target)
+            if node.value is not None:
+                self.visit(node.value)
+            if not postponed:
+                self.visit(node.annotation)
+
+        def visit_ClassDef(self, node):
+            for child in [*node.bases, *node.keywords, *node.decorator_list]:
+                self.visit(child)
+            self.scoped(node, node.name, node.body)
+
+        def visit_Lambda(self, node):
+            self.visit(node.args)
+            self.scoped(node, "lambda", [node.body])
+
+        def comprehension(self, node):
+            self.visit(node.generators[0].iter)
+            name = {ast.ListComp: "listcomp", ast.SetComp: "setcomp",
+                    ast.DictComp: "dictcomp", ast.GeneratorExp: "genexpr"}[type(node)]
+            table = next((t for t in scopes[-1].get_children()
+                          if t.get_name() == name and t.get_lineno() == node.lineno), None)
+            if table:
+                scopes.append(table)
+                bindings.append((table, set()))
+            masked = set()
+            bindings.append((None, masked))
+            for i, generator in enumerate(node.generators):
+                if i:
+                    self.visit(generator.iter)
+                masked.update(n.id for n in ast.walk(generator.target) if isinstance(n, ast.Name))
+                for condition in generator.ifs:
+                    self.visit(condition)
+            for child in ([node.key, node.value] if isinstance(node, ast.DictComp) else [node.elt]):
+                self.visit(child)
+            bindings.pop()
+            if table:
+                bindings.pop()
+                scopes.pop()
+
+        visit_ListComp = visit_SetComp = visit_DictComp = visit_GeneratorExp = comprehension
+
+        def visit_Call(self, node):
+            if isinstance(node.func, ast.Name):
+                name = node.func.id
+                owner = next((s.get_name().lstrip("_") for s in reversed(scopes)
+                              if s.get_type() == "class"), None)
+                if owner and name.startswith("__") and not name.endswith("__"):
+                    name = f"_{owner}{name}"
+                function_scope = False
+                for scope, masked in reversed(bindings):
+                    if node.func.id in masked:
+                        break
+                    if scope is None:
+                        function_scope = True  # Inlined comprehensions also skip class attributes.
+                        continue
+                    if function_scope and scope.get_type() == "class":
+                        continue
+                    function_scope |= scope.get_type() == "function"
+                    try:
+                        symbol = scope.lookup(name)
+                    except KeyError:  # Implicit globals need no symbol in the module table.
+                        continue
+                    if symbol.is_parameter():
+                        rejected.add((node.lineno, node.col_offset))
+                    if not symbol.is_free():
+                        break
+            self.generic_visit(node)
+
+    Calls().visit(tree)
+    return rejected
+
+
+def _overload_lines(source: bytes) -> set[int]:
+    tree = ast.parse(source)
+    names = {alias.asname or alias.name for node in tree.body if isinstance(node, ast.ImportFrom)
+             and node.module in ("typing", "typing_extensions") for alias in node.names if alias.name == "overload"}
+    modules = {alias.asname or alias.name for node in tree.body if isinstance(node, ast.Import)
+               for alias in node.names if alias.name in ("typing", "typing_extensions")}
+    allowed_imports = {id(n) for n in tree.body if isinstance(n, (ast.Import, ast.ImportFrom))
+                       and ((isinstance(n, ast.ImportFrom) and n.module in ("typing", "typing_extensions"))
+                            or (isinstance(n, ast.Import) and all(a.name in ("typing", "typing_extensions") for a in n.names)))}
+    result = set()
+
+    def bindings(body):
+        pending, bound = list(body), set()
+        while pending:
+            node = pending.pop()
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                bound.add(node.name)
+                continue
+            if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store):
+                bound.add(node.id)
+            if isinstance(node, (ast.Import, ast.ImportFrom)) and id(node) not in allowed_imports:
+                bound.update(a.asname or a.name.split('.')[0] for a in node.names)
+            pending.extend(ast.iter_child_nodes(node))
+        return bound
+
+    def walk(body, shadowed):
+        shadowed = shadowed | bindings(body)
+        for node in body:
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                if any((isinstance(d, ast.Name) and d.id in names - shadowed)
+                       or (isinstance(d, ast.Attribute) and d.attr == "overload"
+                           and isinstance(d.value, ast.Name) and d.value.id in modules - shadowed)
+                       for d in node.decorator_list):
+                    result.add(node.lineno)
+                # Local decorators require richer binding analysis; keep those definitions visible.
+            elif isinstance(node, ast.ClassDef):
+                walk(node.body, shadowed)
+            else:
+                walk(list(ast.iter_child_nodes(node)), shadowed)
+
+    walk(tree.body, set())
+    return result

@@ -6,6 +6,7 @@ import subprocess
 from dataclasses import dataclass
 
 from chgraph.store import Store
+from chgraph.evolution import _q
 
 _FMT = "C%x09%H%x09%an%x09%ae%x09%at%x09%s"
 _BRACE = re.compile(r"^(.*)\{(.*) => (.*)\}(.*)$")
@@ -69,10 +70,8 @@ def _batch_load(store: Store, table: str, rows: list[dict]) -> None:
 
 def ingest_git(store: Store, project: str, repo_root: str) -> GitIngestCounts:
     commits, changes = parse_git_log(repo_root, project)
-    # ponytail: TRUNCATE-then-reload is safe because one data dir == one project
-    # (chgraph-run-and-operate §1); incremental append is a later, benchmarked change.
-    store.exec("TRUNCATE TABLE chgraph.git_commits")
-    store.exec("TRUNCATE TABLE chgraph.git_file_changes")
+    for table in ("git_commits", "git_file_changes"):
+        store.delete_rows(f"chgraph.{table}", f"project={_q(project)}")
     _batch_load(store, "chgraph.git_commits", commits)
     _batch_load(store, "chgraph.git_file_changes", changes)
     return GitIngestCounts(

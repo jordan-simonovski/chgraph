@@ -1,5 +1,6 @@
 """Repo -> graph. Batch writes only (INV-5); honest degradation reporting (INV-3)."""
-import os
+import hashlib
+import json
 import subprocess
 from dataclasses import dataclass, field
 from typing import Callable
@@ -8,6 +9,7 @@ from chgraph import embeddings
 from chgraph.evolution import _q, refresh_file_evolution
 from chgraph.gitingest import _batch_load, ingest_git, verify_git_counts
 from chgraph.parse_python import parse_file
+from chgraph.paths import read_source
 from chgraph.store import Store
 from chgraph.text import subtokens
 
@@ -38,14 +40,9 @@ def index_repository(store: Store, project: str, repo_root: str,
         f"SELECT coalesce(max(version), 0) + 1 AS v FROM chgraph.nodes WHERE project = {_q(project)}"
     )[0]["v"]
 
-    # ponytail: TRUNCATE-then-reload is safe because one data dir == one project
-    # (mirrors gitingest.ingest_git). Without it, symbols/files deleted or renamed
-    # since the last index keep their old-version rows forever: FINAL only collapses
-    # rows sharing the same ORDER BY key, so a removed row has no same-key successor
-    # to collapse against and lingers as a ghost node/edge.
-    store.exec("TRUNCATE TABLE chgraph.nodes")
-    store.exec("TRUNCATE TABLE chgraph.edges")
-    store.exec("TRUNCATE TABLE chgraph.embeddings")
+    # Limit replacement to this identity so a staged rebuild preserves the active graph.
+    for table in ("nodes", "edges", "embeddings"):
+        store.delete_rows(f"chgraph.{table}", f"project={_q(project)}")
 
     files = _py_files(repo_root)
     node_rows: list[dict] = []
@@ -55,10 +52,13 @@ def index_repository(store: Store, project: str, repo_root: str,
     total_lines = 0
     done = 0
     for rel in files:
-        src = open(os.path.join(repo_root, rel), "rb").read()
+        src = read_source(repo_root, rel)
         total_lines += src.count(b"\n") + 1
         nodes, edges = parse_file(rel, src)   # pure Python — never raises on bad syntax,
+        content_hash = hashlib.sha256(src).hexdigest()
         for n in nodes:                       # tree-sitter yields a partial tree instead
+            n["properties"] = json.dumps({**json.loads(n["properties"]),
+                                           "content_hash": content_hash})
             doc = n.pop("doc", "")            # transient: embed-text input, not a nodes column
             if n["label"] != "File":
                 embed_qns.append(n["qualified_name"])

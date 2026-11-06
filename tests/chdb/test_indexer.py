@@ -88,3 +88,12 @@ def test_empty_repo_suppresses_density_gate(store, tmp_path):
     res = index_repository(store, "empty", str(repo))
     assert res.files_total == 0
     assert res.degraded_reasons == []
+
+
+def test_indexing_new_generation_preserves_other_projects(store, synth_repo):
+    index_repository(store, "previous", str(synth_repo))
+    before = store.rows("SELECT * FROM chgraph.nodes FINAL WHERE project='previous' ORDER BY qualified_name")
+    index_repository(store, "candidate", str(synth_repo))
+    assert store.rows("SELECT * FROM chgraph.nodes FINAL WHERE project='previous' ORDER BY qualified_name") == before
+    assert store.rows("SELECT count() AS n FROM chgraph.git_commits WHERE project='previous'")[0]["n"] == 14
+    assert store.rows("SELECT count() AS n FROM chgraph.file_evolution FINAL WHERE project='previous'")[0]["n"] > 0

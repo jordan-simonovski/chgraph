@@ -1,0 +1,20 @@
+{
+  "calls": [
+    ["src/fixture_pkg/api.py::entry", "src/fixture_pkg/helpers.py::target"],
+    ["src/fixture_pkg/api.py::Service.run", "src/fixture_pkg/api.py::Service.finish"],
+    ["src/fixture_pkg/api.py::Service.finish", "src/fixture_pkg/helpers.py::target"],
+    ["src/fixture_pkg/helpers.py::duplicate", "src/fixture_pkg/helpers.py::target"],
+    ["src/fixture_pkg/api.py::wire", "src/fixture_pkg/api.py::callback"],
+    ["src/fixture_pkg/api.py::choose", "src/fixture_pkg/helpers.py::duplicate"],
+    ["src/fixture_pkg/consumer.py::unchanged", "src/fixture_pkg/helpers.py::target"]
+  ],
+  "not_calls": [
+    ["src/fixture_pkg/api.py::shadowed", "src/fixture_pkg/helpers.py::target"],
+    ["src/fixture_pkg/api.py::callback", "src/fixture_pkg/helpers.py::target"],
+    ["src/fixture_pkg/api.py::choose", "src/fixture_pkg/other.py::duplicate"],
+    ["src/fixture_pkg/api.py::wire", "src/fixture_pkg/helpers.py::target"]
+  ],
+  "references": [
+    ["src/fixture_pkg/api.py::wire", "src/fixture_pkg/helpers.py::target"]
+  ]
+}

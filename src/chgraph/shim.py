@@ -23,6 +23,10 @@ class IndexStatus(BaseModel):
     nodes_persisted: int = 0
     degraded_reasons: list[str] = []
     error: str | None = None
+    source: str = "native"
+    experimental: bool = False
+    generation: str | None = None
+    rejected_edges: int = 0
 
 
 class SearchItem(BaseModel):
@@ -57,6 +61,22 @@ class TraceStep(BaseModel):
 
 class TracePaths(BaseModel):
     paths: list[TraceStep]
+
+
+class ExploreResult(BaseModel):
+    context: str
+    generation: str
+    truncated: bool
+    warnings: list[str]
+
+
+class ImpactResult(BaseModel):
+    affected: list[dict]
+    cochange: list[dict]
+    generation: str
+    truncated: bool
+    warnings: list[str]
+    evidence_note: str
 
 
 class GraphSchema(BaseModel):
@@ -106,9 +126,9 @@ def main(repo_root: str | None = None) -> None:
     mcp = FastMCP("chgraph")
 
     @mcp.tool()
-    def index_repository() -> IndexJob:
-        """Index this repository into the code graph (async; poll index_status)."""
-        return IndexJob(**_client(repo).call("index"))
+    def index_repository(source: str = "native") -> IndexJob:
+        """Index this repository (async). source: native or experimental codegraph CLI."""
+        return IndexJob(**_client(repo).index(source=source))
 
     @mcp.tool()
     def index_status() -> IndexStatus:
@@ -148,6 +168,20 @@ def main(repo_root: str | None = None) -> None:
         """Trace CALLS paths from a function (direction: callees|callers, depth<=10)."""
         return TracePaths(**_client(repo).call("trace", qualified_name=function_name,
                                                direction=direction, depth=depth))
+
+    @mcp.tool()
+    def explore(query: str, max_chars: int = 12000, max_nodes: int = 30, depth: int = 2) -> ExploreResult:
+        """Experimental: entry points, bounded CALLS graph, fresh source and evidence in one call.
+        max_chars caps context text; warnings report stale source and omitted results."""
+        return ExploreResult(**_client(repo).call("explore", query=query, max_chars=max_chars,
+                                                  max_nodes=max_nodes, depth=depth))
+
+    @mcp.tool()
+    def change_impact(qualified_name: str, depth: int = 5, max_nodes: int = 100) -> ImpactResult:
+        """Experimental: bounded callers with Git ownership/churn and separate co-change evidence.
+        Static reachability and historical co-change do not prove runtime impact or test coverage."""
+        return ImpactResult(**_client(repo).call("impact", qualified_name=qualified_name,
+                                                 depth=depth, max_nodes=max_nodes))
 
     @mcp.tool()
     def get_graph_schema() -> GraphSchema:

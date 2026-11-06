@@ -13,6 +13,7 @@ from chgraph.store import Store
 from chgraph.text import subtokens
 
 VEC_CANDIDATES = 100   # how many nearest-neighbour symbols the vector path adds to the pool
+QUERY_BUDGET = "SETTINGS max_execution_time=5, max_memory_usage=268435456, max_rows_to_read=1000000"
 
 W = {"lex": 0.35, "vec": 0.30, "rec": 0.20, "cen": 0.15}  # one code home; doc home: campaign Phase 5
 
@@ -99,7 +100,8 @@ class SearchPage:
 
 def search_graph(store: Store, project: str, query: str | None = None,
                  name_pattern: str | None = None, label: str | None = None,
-                 limit: int = 200, offset: int = 0) -> SearchPage:
+                 limit: int = 200, offset: int = 0, bounded: bool = False,
+                 match_tokens: bool = False) -> SearchPage:
     if not (query or name_pattern or label):
         raise ValueError("search_graph needs at least one of: query, name_pattern, label")
 
@@ -112,6 +114,9 @@ def search_graph(store: Store, project: str, query: str | None = None,
     if query:
         lex_match = (f"positionCaseInsensitive(n.name, {_q(query)}) > 0"
                      f" OR positionCaseInsensitive(n.qualified_name, {_q(query)}) > 0")
+        if match_tokens:
+            lex_match += "".join(f" OR positionCaseInsensitive(n.name, {_q(token)}) > 0"
+                                  for token in subtokens(query)[:16] if len(token) > 1)
         # vector path widens the candidate set to nearest-neighbour symbols the query never
         # lexically matches — that is the whole point of the vector signal.
         if vec_on:
@@ -121,6 +126,11 @@ def search_graph(store: Store, project: str, query: str | None = None,
         conds.append(f"match(n.name, {_q(name_pattern)})")
     if label:
         conds.append(f"n.label = {_q(label)}")
+    else:
+        declarations = "(n.label IN ('File','Class','Function','Route') AND NOT JSONExtractBool(n.properties, 'declaration_only'))"
+        if query:
+            declarations += f" OR n.qualified_name={_q(query)}"
+        conds.append(f"({declarations})")
     where = " AND ".join(conds)
     lex_expr = _lex_expr(query)
     w_dep = _dep_weight()
@@ -176,6 +186,7 @@ def search_graph(store: Store, project: str, query: str | None = None,
     """
     count_cte = f"WITH {vec_cte_body}\n" if vec_on else ""
     count_sql = f"{count_cte}SELECT count() AS n FROM chgraph.nodes AS n FINAL WHERE {where}"
-    rows = store.rows(sql)
-    total = store.rows(count_sql)[0]["n"]
+    settings = QUERY_BUDGET if bounded else ""
+    rows = store.rows(sql + "\n" + settings)
+    total = store.rows(count_sql + "\n" + settings)[0]["n"]
     return SearchPage(items=rows, total=total, has_more=offset + len(rows) < total)

@@ -86,7 +86,7 @@ def test_index_then_query_roundtrip(daemon):
     job = client.call("index")
     assert job["state"] == "queued" and job["job_id"]
     st = _wait_indexed(client)
-    assert st["state"] == "indexed"
+    assert st["state"] == "indexed", st.get("error") or st
     assert st["nodes_persisted"] > 0
 
     page = client.call("search", query="handle")

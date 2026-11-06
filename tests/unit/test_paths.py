@@ -32,3 +32,14 @@ def test_paths_layout_respects_chgraph_data_dir(tmp_path, monkeypatch):
     assert p.log_dir == p.root / "logs"
     p.ensure()
     assert p.log_dir.is_dir()
+def test_source_reader_rejects_fifo_and_oversized_files(tmp_path):
+    import os
+    import pytest
+    from chgraph.paths import read_source
+
+    os.mkfifo(tmp_path / "pipe.py")
+    with pytest.raises(ValueError, match="regular"):
+        read_source(tmp_path, "pipe.py")
+    (tmp_path / "large.py").write_bytes(b"x" * 100)
+    with pytest.raises(ValueError, match="limit"):
+        read_source(tmp_path, "large.py", max_bytes=10)
