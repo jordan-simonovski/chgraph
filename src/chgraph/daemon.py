@@ -84,6 +84,8 @@ class SessionWorker:
         self._q.put((None, fut))
         try:
             fut.result(timeout=30)
+            # The sentinel is acknowledged before finally releases the store's writer lease.
+            self._t.join()
         except concurrent.futures.TimeoutError:
             # The worker didn't drain in time (e.g. stuck on a long-running query).
             # The sentinel stays queued; the worker thread will still close the
